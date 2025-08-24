@@ -1,0 +1,18 @@
+{
+  "name": "G4NGGAAA-SIESTA",
+  "version": "1.0.0",
+  "description": "Base bot by G4NGGAAA",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "author": "G4NGGAAA",
+  "dependencies": {
+    "@hapi/boom": "latest",
+    "@whiskeysockets/baileys": "latest",
+    "awesome-phonenumber": "latest",
+    "pino": "latest",
+    "form-data": "latest",
+    "axios": "latest"
+  }
+}
