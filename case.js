@@ -782,6 +782,43 @@ mentions: participants.map(a => a.id)
 break;
 
 //════════════════════════════════════════════════//
+case "addsellerweb": { 
+    if (!isCreator) return reply("❗ *Access Denied*\nFitur Only `Owner`")
+    // Ketika Ada Orang Lain/ Selain Owner Yang Mengetik Command Ini Maka Bot Tidak Akan Merespon Walau Menggunakan Mode Public Dan Ini Akan Mengurangi Spam
+    if (!args[0]) return reply(`Penggunaan ${prefix+command} nomor\nContoh ${prefix+command} 6285659202292`)
+   let prrkek = q.split("|")[0].replace(/[^0-9]/g, '')
+    let ceknya = await kxz.onWhatsApp(prrkek) // Mengecek Apkah Nomor ${prrkek} Terdaftar Di WhatsApp 
+    if (ceknya.length == 0) return reply(`Masukkan Nomor Yang Valid Dan Terdaftar Di WhatsApp!!!`)
+    swebnumber.push(prrkek)
+    fs.writeFileSync("./database/sellerweb.json", JSON.stringify(swebnumber))
+    m.reply(`Successfully Added ${prrkek} To Seller Web`)
+}
+break;
+
+case "delsellerweb": {
+    if (!isCreator) return reply("❗ *Access Denied*\nFitur Only `Owner`")
+    // Ketika Ada Orang Lain/ Selain Owner Yang Mengetik Command Ini Maka Bot Tidak Akan Merespon Walau Menggunakan Mode Public Dan Ini Akan Mengurangi Spam
+    if (!args[0]) return reply(`Penggunaan ${prefix+command} nomor\nContoh ${prefix+command} 6285659202292`)
+    let ya = q.split("|")[0].replace(/[^0-9]/g, '') + `@s.whatsapp.net`
+    let unp = swebnumber.indexOf(ya)
+    swebnumber.splice(unp, 1)
+    fs.writeFileSync("./database/sellerweb.json", JSON.stringify(swebnumber))
+    m.reply(`Successfully Removed ${ya} From Seller Web`)
+}
+break;
+
+case "listsellerweb": {
+  if (!isCreator) return reply("❗ *Access Denied*\nFitur Only `Owner`")
+  let data = fs.readFileSync("./database/sellerweb.json", 'utf8')
+  let json = JSON.parse(data)
+  let tekt = "List of Seller Web:\n"
+  json.forEach((item, index) => {
+    tekt += `\`${index + 1}. ${item.replace(/@s\.whatsapp\.net/g, '')}\`\n`
+  })
+  m.reply(tekt)
+}
+break;
+//════════════════════════════════════════════════//
       case 'ping':
       case 'botstatus':
       case 'statusbot': {
