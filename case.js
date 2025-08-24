@@ -143,7 +143,7 @@ module.exports = async (ganggaaa, m) => {
             externalAdReply: {
               title: `${botName}`,
               body: `${ownerNumber}`,
-              thumbnail: fs.readFileSync('./media/michie.jpg'), 
+              thumbnail: fs.readFileSync('./database/g4nggaa.jpg'), 
               sourceUrl: `https://whatsapp.com/channel/0029VbAPj3U1Hsq2RJSlef2a`,
               mediaType: 1,
               renderLargerThumbnail: true,
