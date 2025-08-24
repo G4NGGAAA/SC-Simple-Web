@@ -1,7 +1,7 @@
 # SC-Simple-Web: The Ultimate WhatsApp Bot
 
 <p align="center">
-  <img src="https://files.catbox.moe/rbkc3h.jpg" alt="FLASH-MD-V2 Banner" width="600"/>
+  <img src="https://files.catbox.moe/rbkc3h.jpg" alt="SC-Simple-Web" width="600"/>
 </p>
 
 **SC-Simple-Web** is a powerful, fully customizable WhatsApp bot built with **Node.js** and the **WhatsApp Web API**. Automate tasks, manage groups, and enhance your WhatsApp experience with ease.
@@ -44,7 +44,7 @@ npm start
 | **Contributor** | **Role** |
 |------------------|----------|
 | [Baileys](https://github.com/WhiskeySockets/Baileys) | Core WhatsApp Web API Library |
-| [FranceKing1](https://github.com/franceking1) | Developer & Maintainer of FLASH-MD-V2 |
+| [G4NGGAAA](https://github.com/G4NGGAAA) | Developer & Maintainer of SC Simple Web |
 
 ---
 
@@ -65,7 +65,7 @@ npm start
 | [Use This Template](https://github.com/G4NGGAAA/SC-Simple-Web/generate) | Create your own working bot easily. Eg, for hosting on render ‼️ |
 | [Fork This Repo](https://github.com/G4NGGAAA/SC-Simple-Web/fork) | Show your support and boost visibility |
 
-> Every ⭐ star and fork makes a big difference — thank you for supporting **FLASH-MD-V2**!
+> Every ⭐ star and fork makes a big difference — thank you for supporting **SC Simple Web**!
 
-> Powered by France King 
+> Powered by G4NGGAAA
 ---
