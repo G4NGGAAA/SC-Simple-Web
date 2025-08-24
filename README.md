@@ -25,10 +25,10 @@
 #### 1. Clone the repository:
 
 ```bash
-git clone https://github.com/franceking1/FLASH-MD-V2.git
+git clone [https://github.com/G4NGGAAA/SC-Simple-Web].git
 ```
 ```bash
-cd FLASH-MD-V2
+cd SC-Simple-Web
 ```
 ```bash
 npm install
