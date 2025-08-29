@@ -265,7 +265,7 @@ Jika ada masalah, ketik *.owner*`;
               externalAdReply: {
                 title: `${botName} | Assistant`,
                 body: `© ${ownerName} ${new Date().getFullYear()}`,
-                thumbnailUrl: "https://files.catbox.moe/yupd7z.jpg",
+                thumbnailUrl: "https://files.catbox.moe/iuxbft.jpg",
                 renderLargerThumbnail: true,
                 sourceUrl: `https://whatsapp.com/channel/0029VbAPj3U1Hsq2RJSlef2a`,
                 mediaType: 1,
