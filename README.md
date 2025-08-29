@@ -1,2 +1,2 @@
 Ganti Apikey Gemini di config.js
-ambil APIKEY di aistudio.google.com/apikey
+ambil APIKEY di https://aistudio.google.com/apikey
