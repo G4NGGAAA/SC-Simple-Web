@@ -5,17 +5,27 @@
    ASAL JANGAN HAPUS CREDIT YAA 🎩🎩
 */
 
-global.owner = ['6285855962331'];
-global.saluran = 'https://example.com';
-global.bot = "6285183131924"
-global.namabot = "SiestaBot" 
-global.namaown = "G4NGGAAA"
-global.idch = "120363403378232838@newsleter"
+// --- JANGAN DIHAPUS
+global.owner = ["6285855962331"]; // Ganti dengan nomor Owner
+global.namabot = "KaitoBot";
+global.namaown = "G4NGGAAA";
+global.packname = "Sticker by";
+global.author = "KaitoBot";
 
-//Token Github & Vercel
-global.username_gh = 'Username GitHub'
-global.token_gh = 'Token GitHub'
-global.vercelToken = 'Token Vercel'
+// --- PENGATURAN API & TOKEN
+// Masukkan API Key Gemini Anda di sini
+global.geminiKey = "AIzaSyAiEfDVmqB9k7idEur9VjlytOitKuPYUP4"; 
+
+// Token untuk fitur Web Development (Opsional)
+global.githubUsername = 'G4NGGAAA'; 
+global.githubToken = 'TOKEN_GITHUB_ANDA'; 
+global.vercelToken = 'TOKEN_VERCEL_ANDA';
+
+// --- PENGATURAN BOT (JANGAN DIUBAH JIKA TIDAK MENGERTI)
+global.prefix = '.';
+global.aiChatEnabled = false; // Status default fitur AI
+global.aiChatMode = 'pacar-tsundere'; // Mode kepribadian default AI
+global.conversationHistory = {}; // Jangan diubah, untuk menyimpan riwayat chat AI
 
 let fs = require('fs')
 let file = require.resolve(__filename)
