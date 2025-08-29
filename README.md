@@ -25,7 +25,7 @@
 #### 1. Clone the repository:
 
 ```bash
-git clone [https://github.com/G4NGGAAA/SC-Simple-Web].git
+git clone https://github.com/G4NGGAAA/SC-Simple-Web.git
 ```
 ```bash
 cd SC-Simple-Web
@@ -45,15 +45,6 @@ npm start
 |------------------|----------|
 | [Baileys](https://github.com/WhiskeySockets/Baileys) | Core WhatsApp Web API Library |
 | [G4NGGAAA](https://github.com/G4NGGAAA) | Developer & Maintainer of SC Simple Web |
-
----
-
-### ⚠️ Warning
-
-- **Do NOT copy, modify, or redistribute** this bot without **proper permission**.
-- FLASH-MD-V2 is an **open-source project**, but it is protected by its license and community standards.
-- Give **proper credits** to the original authors and libraries used.
-- Any misuse or abuse of this bot is **strictly prohibited**.
 
 ---
 ***
