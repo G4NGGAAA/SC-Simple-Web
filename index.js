@@ -1,50 +1,33 @@
 /*
-    ==================================================================================
     Base by https://github.com/G4NGGAAA
     Credits: G4NGGAAA
-    MODIFIED: Anti-spam, new UI, Auto-Sticker, QR & Pairing, and Termux Support.
-    
+    MODIFIED: Anti-spam measures, new UI, Auto-Sticker Reply, QR & Pairing, qr-terminal support for Termux.
     BOLEH AMBIL/RENAME
     ASAL JANGAN HAPUS CREDIT YAA 🎩🎩
-
-    --- PANDUAN INSTALASI DI TERMUX ---
-    1. Buka Termux dan jalankan perintah berikut satu per satu:
-       pkg update && pkg upgrade
-       pkg install nodejs git ffmpeg libwebp -y
-       
-    2. Clone repository (jika ada) atau salin file ini ke sebuah folder.
-       
-    3. Masuk ke folder tersebut dan install semua modul yang dibutuhkan:
-       npm install @whiskeysockets/baileys pino @hapi/boom awesome-phonenumber chalk node-fetch
-       
-    4. Jalankan bot:
-       node index.js  // Ganti 'index.js' dengan nama file Anda
-       
-    Pilih opsi 1 untuk menampilkan Kode QR langsung di terminal.
-    ==================================================================================
 */
 
-const { default: makeWASocket, DisconnectReason, jidDecode, proto, getContentType, useMultiFileAuthState, downloadContentFromMessage } = require("@whiskeysockets/baileys")
-const pino = require('pino')
-const { Boom } = require('@hapi/boom')
-const fs = require('fs')
+const { default: makeWASocket, DisconnectReason, jidDecode, proto, getContentType, useMultiFileAuthState, downloadContentFromMessage } = require("@whiskeysockets/baileys");
+const pino = require('pino');
+const { Boom } = require('@hapi/boom');
+const fs = require('fs');
 const readline = require("readline");
-const PhoneNumber = require('awesome-phonenumber')
-const chalk = require('chalk')
-const fetch = require('node-fetch')
+const PhoneNumber = require('awesome-phonenumber');
+const chalk = require('chalk');
+const fetch = require('node-fetch');
+const qrcode = require('qr-terminal'); // <-- Added for better QR code display in terminal
 
 // Helper function to ask questions in the terminal
-const question = (text) => { 
-    const rl = readline.createInterface({ 
-        input: process.stdin, 
-        output: process.stdout 
-    }); 
-    return new Promise((resolve) => { 
+const question = (text) => {
+    const rl = readline.createInterface({
+        input: process.stdin,
+        output: process.stdout
+    });
+    return new Promise((resolve) => {
         rl.question(text, (answer) => {
             resolve(answer);
             rl.close();
         });
-    }); 
+    });
 };
 
 // Helper function for creating delays
@@ -52,7 +35,7 @@ const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
 //~~~~~Main Connection Function~~~~~//
 async function Startganggaaa() {
-    const { state, saveCreds } = await useMultiFileAuthState("session")
+    const { state, saveCreds } = await useMultiFileAuthState("session");
     let ganggaaa;
 
     // --- NEW: Randomized browser identity to avoid spam detection ---
@@ -68,22 +51,25 @@ async function Startganggaaa() {
     // --- Tampilan startup yang lebih menarik ---
     console.log(chalk.green.bold(`
     --------------------------------------
-    🎩 Selamat datang di SiestaBot 1412
+    ☘️ Selamat datang di KaitoBot 1412
       terimakasih telah menggunakan script ini 👍
     --------------------------------------
     `));
-    console.log(chalk.yellow.bold("📁     Inisialisasi modul..."));
+
+    console.log(chalk.yellow.bold("📁      Inisialisasi modul..."));
     console.log(chalk.cyan.bold("- API Baileys Telah Dimuat"));
     console.log(chalk.cyan.bold("- Sistem File Siap Digunakan"));
     console.log(chalk.cyan.bold("- Database Telah Diinisialisasi"));
+
     console.log(chalk.blue.bold("\n🤖 Info Bot:"));
     console.log(chalk.white.bold("   | GitHub: ") + chalk.cyan.bold("https://github.com/G4NGGAAA"));
     console.log(chalk.white.bold("   | Developer: ") + chalk.green.bold("G4NGGAAA"));
     console.log(chalk.white.bold("   | Status Server: ") + chalk.green.bold("Online"));
     console.log(chalk.white.bold("   | Versi Node.js: ") + chalk.magenta.bold(process.version));
-    console.log(chalk.white.bold("   | Browser ID: ") + chalk.yellow.bold(selectedBrowser.join(' ')));
-    console.log(chalk.yellow.bold("\n✨ Fitur Unggulan Aktif:")); 
+    console.log(chalk.white.bold("   | Browser ID: ") + chalk.yellow.bold(selectedBrowser.join(' '))); // Display selected browser
+    console.log(chalk.yellow.bold("\n✨ Fitur Unggulan Aktif:"));
     console.log(chalk.white.bold("   | Auto-Sticker Reply (Delayed)"));
+
 
     // --- Check for existing session ---
     if (!fs.existsSync('./session/creds.json')) {
@@ -108,13 +94,8 @@ async function Startganggaaa() {
                 process.exit(1);
             }
         } else {
-            // Opsi ini akan menampilkan QR code di terminal, sangat cocok untuk Termux
-            ganggaaa = makeWASocket({ 
-                logger: pino({ level: "silent" }), 
-                printQRInTerminal: true, 
-                auth: state, 
-                browser: selectedBrowser 
-            });
+            // Using QR code, but will be handled by the 'connection.update' event
+            ganggaaa = makeWASocket({ logger: pino({ level: "silent" }), printQRInTerminal: false, auth: state, browser: selectedBrowser });
         }
     } else {
         console.log(chalk.green.bold('\nMenemukan sesi yang ada. Menghubungkan secara otomatis...'));
@@ -141,116 +122,122 @@ async function Startganggaaa() {
             const m = smsg(ganggaaa, mek, contacts)
             const pushname = m.pushName || 'Unknown'
             const budy = (typeof m.text === 'string' ? m.text : '')
-            
+            const command = budy.toLowerCase().split(' ')[0] || ''
+
             // --- Fitur Balasan Stiker Otomatis (dengan delay anti-spam) ---
             if (!m.isGroup) {
-                 const stickerKeywords = {
-                     'hai': 'https://api.waifu.pics/sfw/wave', 'pagi': 'https://api.waifu.pics/sfw/shinobu',
-                     'malam': 'https://api.waifu.pics/sfw/neko', 'wibu': 'https://api.waifu.pics/sfw/awoo'
-                 };
-                 if (stickerKeywords[budy.toLowerCase()]) {
-                     try {
-                        await sleep(Math.floor(Math.random() * 2000) + 1000); 
-                        await ganggaaa.sendPresenceUpdate('composing', m.chat);
+                const stickerKeywords = {
+                    'hai': 'https://api.waifu.pics/sfw/wave',
+                    'pagi': 'https://api.waifu.pics/sfw/shinobu',
+                    'malam': 'https://api.waifu.pics/sfw/neko',
+                    'wibu': 'https://api.waifu.pics/sfw/awoo'
+                };
+                if (stickerKeywords[budy.toLowerCase()]) {
+                    try {
+                        // Random delay between 1 to 3 seconds
+                        await sleep(Math.floor(Math.random() * 2000) + 1000);
+
+                        await ganggaaa.sendPresenceUpdate('composing', m.chat); // Show 'typing...'
+
                         let response = await fetch(stickerKeywords[budy.toLowerCase()]);
                         let data = await response.json();
                         await ganggaaa.sendMessage(m.chat, { sticker: { url: data.url } });
                         console.log(chalk.bgGreen.white(`[AUTO STICKER]`), `Replied to "${budy}" with a sticker for ${pushname}.`);
-                     } catch (err) {
-                         console.log(chalk.red('Gagal mengirim stiker otomatis:'), err);
-                     }
-                 }
+                    } catch (err) {
+                        console.log(chalk.red('Gagal mengirim stiker otomatis:'), err);
+                    }
+                }
             }
 
-            // --- Logging Pesan ---
+
             if (m.message && m.isGroup) {
                 try {
                     const groupMetadata = await ganggaaa.groupMetadata(m.chat);
                     const groupName = groupMetadata.subject || 'Unknown Group';
                     console.log(`
 ┌────────── [ GROUP CHAT LOG ] ──────────┐
-│ 🕒 Waktu     : ${chalk.green(new Date().toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' }))}
-│ 📝 Pesan     : ${chalk.blue(budy || m.mtype)}
-│ 👤 Pengirim   : ${chalk.magenta(pushname)} (${chalk.cyan(m.sender)})
-│ 🏠 Grup      : ${chalk.yellow(groupName)} (${chalk.cyan(m.chat)})
+│ 🕒 Waktu      : ${chalk.green(new Date().toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' }))}
+│ 📝 Pesan      : ${chalk.blue(budy || m.mtype)}
+│ 👤 Pengirim    : ${chalk.magenta(pushname)} (${chalk.cyan(m.sender)})
+│ 🏠 Grup        : ${chalk.yellow(groupName)} (${chalk.cyan(m.chat)})
 └────────────────────────────────────────┘`);
                 } catch (err) { console.log('Error fetching group metadata:', err); }
             } else if (m.message && !m.isGroup) {
                 console.log(`
 ┌───────── [ PRIVATE CHAT LOG ] ─────────┐
-│ 🕒 Waktu     : ${chalk.green(new Date().toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' }))}
-│ 📝 Pesan     : ${chalk.blue(budy || m.mtype)}
-│ 👤 Pengirim   : ${chalk.magenta(pushname)} (${chalk.cyan(m.sender)})
+│ 🕒 Waktu      : ${chalk.green(new Date().toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' }))}
+│ 📝 Pesan      : ${chalk.blue(budy || m.mtype)}
+│ 👤 Pengirim    : ${chalk.magenta(pushname)} (${chalk.cyan(m.sender)})
 └────────────────────────────────────────┘`);
             }
 
-            // Memanggil command handler dari file terpisah
-            // Pastikan Anda memiliki file bernama "case.js" di folder yang sama
-            // require("./case")(ganggaaa, m, chatUpdate, contacts)
+            // Pass the processed message to the command handler
+            require("./case")(ganggaaa, m, chatUpdate, contacts)
         } catch (err) {
             console.log(err)
         }
     })
 
-    // --- DIUBAH: Handler koneksi yang lebih informatif ---
+    ganggaaa.decodeJid = (jid) => {
+        if (!jid) return jid
+        if (/:\d+@/gi.test(jid)) {
+            let decode = jidDecode(jid) || {}
+            return decode.user && decode.server && decode.user + '@' + decode.server || jid
+        } else return jid
+    }
+
+    ganggaaa.getName = async(jid, withoutContact = false) => {
+        let id = ganggaaa.decodeJid(jid)
+        withoutContact = ganggaaa.withoutContact || withoutContact
+        let v
+        if (id.endsWith("@g.us")) {
+            try {
+                v = await ganggaaa.groupMetadata(id) || {};
+                return v.subject || PhoneNumber('+' + id.replace('@s.whatsapp.net', '')).getNumber('international');
+            } catch (err) {
+                return PhoneNumber('+' + id.replace('@s.whatsapp.net', '')).getNumber('international');
+            }
+        } else {
+            v = id === '0@s.whatsapp.net' ? { id, name: 'WhatsApp' } : id === ganggaaa.decodeJid(ganggaaa.user.id) ?
+                ganggaaa.user : (contacts[id] || {});
+            return (withoutContact ? '' : v.name) || v.verifiedName || PhoneNumber('+' + jid.replace('@s.whatsapp.net', '')).getNumber('international');
+        }
+    }
+
+    ganggaaa.public = true // Set to true to respond to everyone
+    ganggaaa.serializeM = (m) => smsg(ganggaaa, m, contacts);
+
     ganggaaa.ev.on('connection.update', (update) => {
         const { connection, lastDisconnect, qr } = update;
 
-        // Menampilkan QR Code jika tersedia
+        // --- NEW: Handle QR code with qr-terminal ---
         if (qr) {
-            console.log(chalk.yellow.bold('\n[!] Silakan pindai Kode QR ini untuk terhubung.'));
-            console.log(chalk.cyan('-> Tips Pengguna Termux: Cubit layar (zoom out) jika QR code terlalu besar.\n'));
+            console.log(chalk.yellow.bold('\nPindai kode QR di bawah ini dengan aplikasi WhatsApp Anda.\n'));
+            qrcode.generate(qr, { small: true });
         }
 
         if (connection === 'close') {
-            const reason = new Boom(lastDisconnect?.error)?.output.statusCode;
-            const shouldReconnect = [
-                DisconnectReason.badSession, DisconnectReason.connectionClosed,
-                DisconnectReason.connectionLost, DisconnectReason.connectionReplaced,
-                DisconnectReason.restartRequired, DisconnectReason.timedOut
-            ].includes(reason);
-
-            if (shouldReconnect) {
-                console.log(chalk.yellow('Koneksi terputus, mencoba menyambung kembali...'));
+            let reason = new Boom(lastDisconnect?.error)?.output.statusCode;
+            if ([DisconnectReason.badSession, DisconnectReason.connectionClosed, DisconnectReason.connectionLost, DisconnectReason.connectionReplaced, DisconnectReason.restartRequired, DisconnectReason.timedOut].includes(reason)) {
+                console.log(chalk.yellow('Koneksi bermasalah, mencoba menyambung kembali...'));
                 Startganggaaa();
             } else if (reason === DisconnectReason.loggedOut) {
-                console.log(chalk.red('Perangkat Keluar. Hapus folder "session" dan pindai ulang QR.'));
+                console.log(chalk.red('Perangkat Keluar, harap hapus folder "session" dan mulai ulang.'));
                 process.exit();
             } else {
-                console.error(chalk.red('Koneksi ditutup, alasan tidak diketahui. Mencoba menghubungkan kembali...'), lastDisconnect);
-                Startganggaaa();
+                console.error(`Unknown DisconnectReason: ${reason}|${connection}`);
+                Startganggaaa(); // Attempt to reconnect on unknown errors as well
             }
         } else if (connection === 'open') {
-            console.log(chalk.green.bold('\n[Terhubung] Bot berhasil terhubung ke WhatsApp! ✅'));
-            console.log(chalk.cyan.italic('ID Pengguna: ' + ganggaaa.user.id));
+            console.log(chalk.green.bold('\n[Terhubung] Berhasil terhubung ke WhatsApp! Bot sekarang online.'));
+            console.log(chalk.cyan.italic('ID Pengguna Terhubung: ' + JSON.stringify(ganggaaa.user.id, null, 2)));
         }
     });
 
     ganggaaa.ev.on('creds.update', saveCreds)
-    
-    // --- Helper Functions ---
-    ganggaaa.decodeJid = (jid) => {
-        if (!jid) return jid;
-        if (/:\d+@/gi.test(jid)) {
-            let decode = jidDecode(jid) || {};
-            return decode.user && decode.server && decode.user + '@' + decode.server || jid;
-        } else return jid;
-    }
-
-    ganggaaa.getName = async (jid, withoutContact = false) => {
-        let id = ganggaaa.decodeJid(jid);
-        let v;
-        if (id.endsWith("@g.us")) {
-            v = contacts[id] || {};
-            if (!(v.name || v.subject)) v = await ganggaaa.groupMetadata(id) || {};
-            return v.name || v.subject || PhoneNumber('+' + id.replace('@s.whatsapp.net', '')).getNumber('international');
-        } else v = id === '0@s.whatsapp.net' ? { id, name: 'WhatsApp' } : id === ganggaaa.decodeJid(ganggaaa.user.id) ? ganggaaa.user : (contacts[id] || {});
-        return (withoutContact ? '' : v.name) || v.subject || v.verifiedName || PhoneNumber('+' + jid.replace('@s.whatsapp.net', '')).getNumber('international');
-    }
-
-    ganggaaa.public = true
     ganggaaa.sendText = (jid, text, quoted = '', options) => ganggaaa.sendMessage(jid, { text: text, ...options }, { quoted })
-    ganggaaa.downloadMediaMessage = async (message) => {
+
+    ganggaaa.downloadMediaMessage = async(message) => {
         let mime = (message.msg || message).mimetype || ''
         let messageType = message.mtype ? message.mtype.replace(/Message/gi, '') : mime.split('/')[0]
         const stream = await downloadContentFromMessage(message, messageType)
@@ -260,6 +247,7 @@ async function Startganggaaa() {
         }
         return buffer
     }
+
     return ganggaaa
 }
 
@@ -306,7 +294,7 @@ function smsg(ganggaaa, m, contacts) {
             m.quoted.download = () => ganggaaa.downloadMediaMessage(m.quoted)
         }
     }
-    if (m.msg.url) m.download = () => ganggaaa.downloadMediaMessage(m.msg)
+    if (m.msg && m.msg.url) m.download = () => ganggaaa.downloadMediaMessage(m.msg)
     m.text = m.msg.text || m.msg.caption || m.message.conversation || m.msg.contentText || m.msg.selectedDisplayText || m.msg.title || ''
     m.reply = (text, chatId = m.chat, options = {}) => Buffer.isBuffer(text) ? ganggaaa.sendMedia(chatId, text, 'file', '', m, { ...options }) : ganggaaa.sendText(chatId, text, m, { ...options })
     m.copy = () => smsg(ganggaaa, M.fromObject(M.toObject(m)))
@@ -318,8 +306,7 @@ function smsg(ganggaaa, m, contacts) {
 let file = require.resolve(__filename)
 fs.watchFile(file, () => {
     fs.unwatchFile(file)
-    console.log(chalk.yellow(`Update detected in ${__filename}, restarting...`))
+    console.log(chalk.yellow(`Update detected in ${__filename}`))
     delete require.cache[file]
     require(file)
 })
-         
