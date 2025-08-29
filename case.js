@@ -243,7 +243,6 @@ Saya *${botName}*, asisten digital Anda yang siap membantu 24/7.
 ┃◦ \`${prefix}uptokenvercel <token>\`
 ┃◦ \`${prefix}addsellerweb <nomor>\`
 ┃◦ \`${prefix}delsellerweb <nomor>\`
-┃◦ \`${prefix}spampair <nomor>|<jumlah>\`
 ┗━━━━━━━━━━━
 
 *Creator: ${ownerName}*
@@ -574,17 +573,45 @@ case 'off': {
 }
 break;
 
+// Ganti case 'setmode' Anda yang lama dengan ini:
 case 'setmode': {
     if (!isCreator) return reply(mess.owner);
+
+    // Daftar tombol yang akan dikirim
+    const buttons = [
+        { buttonId: '.setmodenow teman', buttonText: { displayText: 'Teman' }, type: 1 },
+        { buttonId: '.setmodenow asisten', buttonText: { displayText: 'Asisten' }, type: 1 },
+        { buttonId: '.setmodenow pacar-biasa', buttonText: { displayText: 'Pacar Biasa' }, type: 1 },
+        { buttonId: '.setmodenow pacar-tsundere', buttonText: { displayText: 'Pacar Tsundere' }, type: 1 },
+        { buttonId: '.setmodenow pacar-yandere', buttonText: { displayText: 'Pacar Yandere' }, type: 1 }
+    ];
+
+    // Objek pesan yang berisi teks dan tombol
+    const buttonMessage = {
+        text: "Silakan pilih mode AI yang ingin Anda gunakan.",
+        footer: 'Pilih salah satu tombol di bawah ini',
+        buttons: buttons,
+        headerType: 1
+    };
+
+    // Kirim pesan dengan tombol (ganti 'client.sendMessage' sesuai dengan fungsi di bot Anda)
+    await g4nggaaa.sendMessage(from, buttonMessage);
+}
+break;
+
+// Tambahkan case baru ini untuk menangani respons dari tombol
+case 'setmodenow': {
+    if (!isCreator) return reply(mess.owner);
+
     const availableModes = ['teman', 'asisten', 'pacar-biasa', 'pacar-tsundere', 'pacar-yandere'];
     const newMode = text.trim().toLowerCase();
-    if (!newMode) return reply(`*Pilih mode:*\n- ${availableModes.join('\n- ')}\n\n*Contoh:* .setmode teman`);
 
     if (availableModes.includes(newMode)) {
         global.aiChatMode = newMode;
         reply(`✅ Mode AI berhasil diubah menjadi: *${newMode}*`);
     } else {
-        reply(`❌ Mode tidak ditemukan.\n\n*Pilih mode yang tersedia:*\n- ${availableModes.join('\n- ')}`);
+        // Balasan ini kemungkinan tidak akan pernah terkirim jika input hanya berasal dari tombol
+        reply(`❌ Mode tidak ditemukan.`);
     }
 }
 break;
