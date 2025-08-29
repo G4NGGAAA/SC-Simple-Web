@@ -1,5 +1,5 @@
 {
-  "name": "G4NGGAAA-SIESTA",
+  "name": "G4NGGAAA-ALYA",
   "version": "1.0.0",
   "description": "Base bot by G4NGGAAA",
   "main": "index.js",
@@ -11,10 +11,11 @@
     "@hapi/boom": "latest",
     "@whiskeysockets/baileys": "latest",
     "awesome-phonenumber": "latest",
-    "qrcode-terminal": "^0.12.0",
-    "pino": "latest",
-    "node-fetch": "^3.3.2",
+    "axios": "latest",
     "form-data": "latest",
-    "axios": "latest"
+    "node-fetch": "^2.7.0",
+    "pino": "latest",
+    "qrcode-terminal": "^0.12.0",
+    "unzipper": "^0.12.3"
   }
 }

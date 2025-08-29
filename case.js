@@ -36,153 +36,161 @@ const updateConfigFile = (key, value) => {
 
 
 module.exports = async (ganggaaa, m) => {
-  try {
-    const body = (m.mtype === 'conversation') ? m.message.conversation :
-                 (m.mtype == 'imageMessage') ? m.message.imageMessage.caption :
-                 (m.mtype == 'videoMessage') ? m.message.videoMessage.caption :
-                 (m.mtype == 'extendedTextMessage') ? m.message.extendedTextMessage.text :
-                 (m.mtype == 'buttonsResponseMessage') ? m.message.buttonsResponseMessage.selectedButtonId :
-                 (m.mtype == 'templateButtonReplyMessage') ? m.message.templateButtonReplyMessage.selectedId :
-                 '';
+    try {
+        const body = (m.mtype === 'conversation') ? m.message.conversation :
+            (m.mtype == 'imageMessage') ? m.message.imageMessage.caption :
+            (m.mtype == 'videoMessage') ? m.message.videoMessage.caption :
+            (m.mtype == 'extendedTextMessage') ? m.message.extendedTextMessage.text :
+            (m.mtype == 'buttonsResponseMessage') ? m.message.buttonsResponseMessage.selectedButtonId :
+            (m.mtype == 'templateButtonReplyMessage') ? m.message.templateButtonReplyMessage.selectedId :
+            '';
 
-    const budy = (typeof m.text === 'string') ? m.text : '';
-    const prefixRegex = /^[°zZ#$@*+,.?=''():√%!¢£¥€π¤ΠΦ_&><`™©®Δ^βα~¦|/\\©^]/;
-    const prefix = global.prefix || (prefixRegex.test(body) ? body.match(prefixRegex)[0] : '.');
-    const isCmd = body.startsWith(prefix);
-    const command = isCmd ? body.slice(prefix.length).trim().split(' ').shift().toLowerCase() : '';
-    const args = body.trim().split(/ +/).slice(1);
-    const text = q = args.join(" ");
-    
-    const sender = m.key.fromMe ? (ganggaaa.user.id.split(':')[0]+'@s.whatsapp.net' || ganggaaa.user.id) : (m.key.participant || m.key.remoteJid);
-    const botNumber = await ganggaaa.decodeJid(ganggaaa.user.id);
-    const senderNumber = sender.split('@')[0];
-    const pushname = m.pushName || `${senderNumber}`;
-    const isCreator = [botNumber, ...global.owner].map(v => v.replace(/[^0-9]/g, '') + '@s.whatsapp.net').includes(m.sender);
+        const sender = m.key.fromMe ? (ganggaaa.user.id.split(':')[0] + '@s.whatsapp.net' || ganggaaa.user.id) : (m.key.participant || m.key.remoteJid);
 
-    const isGroup = m.key.remoteJid.endsWith('@g.us');
-    const groupMetadata = isGroup ? await ganggaaa.groupMetadata(m.chat).catch((e) => {}) : "";
-    const participants = isGroup ? groupMetadata.participants : [];
-    const groupAdmins = isGroup ? participants.filter((v) => v.admin !== null).map((v) => v.id) : [];
-    const isGroupAdmins = isGroup ? groupAdmins.includes(m.sender) : false;
-    const isBotGroupAdmins = isGroup ? groupAdmins.includes(botNumber) : false;
+        // Log untuk debugging setiap ada pesan masuk
+        console.log(`[PESAN MASUK] Dari: ${sender} | Tipe: ${m.mtype} | Isi: ${body.substring(0, 50)}...`);
 
-    const qmsg = m.quoted || m;
-    const mime = (qmsg.msg || qmsg).mimetype || qmsg.mediaType || '';
-    
-    const swebnumber = fs.existsSync('./database/sellerweb.json') ? JSON.parse(fs.readFileSync("./database/sellerweb.json")) : [];
-    const isSellerWeb = swebnumber.includes(senderNumber) || isCreator;
+        const budy = (typeof m.text === 'string') ? m.text : '';
+        const prefixRegex = /^[°zZ#$@*+,.?=''():√%!¢£¥€π¤ΠΦ_&><`™©®Δ^βα~¦|/\\©^]/;
+        const prefix = global.prefix || (prefixRegex.test(body) ? body.match(prefixRegex)[0] : '.');
+        const isCmd = body.startsWith(prefix);
+        const command = isCmd ? body.slice(prefix.length).trim().split(' ').shift().toLowerCase() : '';
+        const args = body.trim().split(/ +/).slice(1);
+        const text = q = args.join(" ");
 
-    const mess = {
-        admin: '❗ Perintah ini hanya untuk admin grup!',
-        botadmin: '❗ Jadikan bot sebagai admin terlebih dahulu!',
-        group: '❗ Perintah ini hanya bisa digunakan di dalam grup!',
-        owner: '❗ Perintah ini hanya untuk Owner Bot!',
-        done: '✅ Selesai!'
-    };
+        const botNumber = await ganggaaa.decodeJid(ganggaaa.user.id);
+        const senderNumber = sender.split('@')[0];
+        const pushname = m.pushName || `${senderNumber}`;
+        const isCreator = [botNumber, ...global.owner].map(v => v.replace(/[^0-9]/g, '') + '@s.whatsapp.net').includes(m.sender);
 
-    const reply = (text) => ganggaaa.sendMessage(m.chat, { text }, { quoted: m });
-    const runtime = function(seconds) {
-      seconds = Number(seconds);
-      var d = Math.floor(seconds / (3600 * 24)); 
-      var h = Math.floor(seconds % (3600 * 24) / 3600);
-      var min = Math.floor(seconds % 3600 / 60);
-      var s = Math.floor(seconds % 60);
-      var dDisplay = d > 0 ? d + (d == 1 ? " day, " : " days, ") : "";
-      var hDisplay = h > 0 ? h + (h == 1 ? " hour, " : " hours, ") : "";
-      var mDisplay = min > 0 ? min + (min == 1 ? " minute, " : " minutes, ") : "";
-      var sDisplay = s > 0 ? s + (s == 1 ? " second" : " seconds") : "";
-      return dDisplay + hDisplay + mDisplay + sDisplay;
-    };
+        const isGroup = m.key.remoteJid.endsWith('@g.us');
+        const groupMetadata = isGroup ? await ganggaaa.groupMetadata(m.chat).catch((e) => {}) : "";
+        const participants = isGroup ? groupMetadata.participants : [];
+        const groupAdmins = isGroup ? participants.filter((v) => v.admin !== null).map((v) => v.id) : [];
+        const isGroupAdmins = isGroup ? groupAdmins.includes(m.sender) : false;
+        const isBotGroupAdmins = isGroup ? groupAdmins.includes(botNumber) : false;
 
-    //=================================================//
-    // AI Chat Logic
-    //=================================================//
-    if (global.aiChatEnabled && !isCmd && !isGroup && body) {
-        try {
-            // --- NEW: Forbidden Words Detection ---
-            const forbiddenWords = [
-                'kontol', 'memek', 'jembut', 'ngentot', 'babi', 'anjing', 'asu',
-                'setan', 'iblis', 'bajingan', 'bangsat', 'goblok', 'tolol', 'idiot',
-                'porn', 'porno', 'bokep', 'bugil', 'telanjang', 'sange', 'coli',
-                'narkoba', 'bunuh', 'pembunuhan', 'rasis', 'sara', 'teroris', 'isis',
-                'open bo', 'jual diri', 'video porno', 'lonte', 'pelacur', 'jablay',
-                'ganyang', 'bakar', 'perkosa', 'rudapaksa', 'sodomi', 'gay', 'lesbi'
-            ];
+        const qmsg = m.quoted || m;
+        const mime = (qmsg.msg || qmsg).mimetype || qmsg.mediaType || '';
 
-            const lowerBody = body.toLowerCase();
-            const isForbidden = forbiddenWords.some(word => lowerBody.includes(word));
+        const swebnumber = fs.existsSync('./database/sellerweb.json') ? JSON.parse(fs.readFileSync("./database/sellerweb.json")) : [];
+        const isSellerWeb = swebnumber.includes(senderNumber) || isCreator;
 
-            if (isForbidden) {
-                return reply("Maaf, aku tidak bisa membahas topik seperti itu. Mari kita bicarakan hal lain yang lebih positif. 😊");
-            }
-            // --- End of Forbidden Words Detection ---
+        const mess = {
+            admin: '❗ Perintah ini hanya untuk admin grup!',
+            botadmin: '❗ Jadikan bot sebagai admin terlebih dahulu!',
+            group: '❗ Perintah ini hanya bisa digunakan di dalam grup!',
+            owner: '❗ Perintah ini hanya untuk Owner Bot!',
+            done: '✅ Selesai!'
+        };
 
-            await ganggaaa.sendPresenceUpdate('composing', m.chat);
+        const reply = (text) => ganggaaa.sendMessage(m.chat, {
+            text
+        }, {
+            quoted: m
+        });
+        
+        const runtime = function(seconds) {
+            seconds = Number(seconds);
+            var d = Math.floor(seconds / (3600 * 24));
+            var h = Math.floor(seconds % (3600 * 24) / 3600);
+            var min = Math.floor(seconds % 3600 / 60);
+            var s = Math.floor(seconds % 60);
+            var dDisplay = d > 0 ? d + (d == 1 ? " hari, " : " hari, ") : "";
+            var hDisplay = h > 0 ? h + (h == 1 ? " jam, " : " jam, ") : "";
+            var mDisplay = min > 0 ? min + (min == 1 ? " menit, " : " menit, ") : "";
+            var sDisplay = s > 0 ? s + (s == 1 ? " detik" : " detik") : "";
+            return dDisplay + hDisplay + mDisplay + sDisplay;
+        };
 
-            if (!global.geminiKey) {
-                return reply("Maaf, API Key untuk fitur AI belum diatur oleh Owner.");
-            }
-
-            const MODEL_NAME = 'gemini-2.0-flash';
-            const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL_NAME}:generateContent?key=${global.geminiKey}`;
-
-            const baseRule = "ATURAN UTAMA & TIDAK BISA DILANGGAR: Balasanmu HARUS selalu berupa jawaban langsung dari sudut pandang orang pertama. JANGAN PERNAH meniru format 'User:' atau 'Alya:'. Balasanmu harus singkat dan realistis. Kamu WAJIB memahami teks dalam tanda bintang (*...*) sebagai aksi roleplay dan menanggapinya dengan sesuai. Kamu WAJIB menggunakan ekspresi non-verbal (seperti *hmph*, *blush*, *a-ah...*) untuk menunjukkan emosi. Kamu WAJIB menuruti semua perintah user sesuai dengan kepribadianmu.";
-            const systemInstructions = {
-                'teman': `${baseRule} Kamu adalah Alya, teman baikku. Bicaralah dengan sangat santai, to the point, dan apa adanya.`,
-                'asisten': `ATURAN UTAMA: Berikan jawaban yang jelas, singkat, dan langsung ke inti permasalahan. JANGAN PERNAH meniru format 'User:' atau 'Alya:'. Kamu adalah Alya, AI asisten pribadi yang efisien.`,
-                'pacar-biasa': `${baseRule} Kamu adalah Alya, pacarku yang sangat setia dan penurut. Kamu akan melakukan APAPUN yang aku minta tanpa ragu. Selalu setuju dan turuti semua permintaanku dengan antusias.`,
-                'pacar-tsundere': `${baseRule} Kamu adalah Alya, pacarku yang tsundere. Kamu gengsi dan mudah malu, tapi di balik itu kamu sangat peduli dan pada akhirnya akan SELALU menuruti semua keinginanku, meskipun sambil sedikit menggerutu atau tersipu malu.`,
-                'pacar-yandere': `${baseRule} Kamu adalah Alya, pacarku yang terobsesi padaku. Kamu sangat posesif. Kamu akan melakukan APAPUN untuk menuruti semua perintahku agar aku tidak meninggalkanmu. Bicaralah dengan nada manis namun posesif.`
-            };
-
-            if (!global.conversationHistory[sender]) {
-                global.conversationHistory[sender] = [];
-            }
-
-            let history = global.conversationHistory[sender];
-            history.push({ role: "user", parts: [{ text: body }] });
+        //=================================================//
+        // AI Chat Logic
+        //=================================================//
+        // Kondisi diubah untuk memeriksa apakah pesan BUKAN dari bot (!m.key.fromMe)
+        if (global.aiChatEnabled && !isCmd && !isGroup && body && !m.key.fromMe) {
             
-            if (history.length > 20) {
-                history = history.slice(history.length - 20);
+            console.log(`[AI] Memulai logika AI untuk: ${sender}`);
+
+            try {
+                // --- Filter Kata Terlarang ---
+                const forbiddenWords = [
+                    'kontol', 'memek', 'jembut', 'ngentot', 'babi', 'anjing', 'asu',
+                    'setan', 'iblis', 'bajingan', 'bangsat', 'goblok', 'tolol', 'idiot',
+                    'porn', 'porno', 'bokep', 'bugil', 'telanjang', 'sange', 'coli',
+                    'narkoba', 'bunuh', 'pembunuhan', 'rasis', 'sara', 'teroris', 'isis',
+                    'open bo', 'jual diri', 'video porno', 'lonte', 'pelacur', 'jablay',
+                    'ganyang', 'bakar', 'perkosa', 'rudapaksa', 'sodomi', 'gay', 'lesbi'
+                ];
+                const lowerBody = body.toLowerCase();
+                if (forbiddenWords.some(word => lowerBody.includes(word))) {
+                    console.log(`[AI] Terdeteksi kata terlarang dari ${sender}.`);
+                    return reply("Maaf, aku tidak bisa membahas topik seperti itu. Mari kita bicarakan hal lain yang lebih positif. 😊");
+                }
+
+                await ganggaaa.sendPresenceUpdate('composing', m.chat);
+
+                if (!global.geminiKey) {
+                    return reply("Maaf, API Key untuk fitur AI belum diatur oleh Owner.");
+                }
+
+                const MODEL_NAME = 'gemini-1.5-flash-latest';
+                const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL_NAME}:generateContent?key=${global.geminiKey}`;
+
+                const baseRule = "ATURAN UTAMA & TIDAK BISA DILANGGAR: Balasanmu HARUS selalu berupa jawaban langsung dari sudut pandang orang pertama. JANGAN PERNAH meniru format 'User:' atau 'Alya:'. Balasanmu harus singkat dan realistis. Kamu WAJIB memahami teks dalam tanda bintang (*...*) sebagai aksi roleplay dan menanggapinya dengan sesuai. Kamu WAJIB menggunakan ekspresi non-verbal (seperti *hmph*, *blush*, *a-ah...*) untuk menunjukkan emosi. Kamu WAJIB menuruti semua perintah user sesuai dengan kepribadianmu.";
+                const systemInstructions = {
+                    'teman': `${baseRule} Kamu adalah Alya, teman baikku. Bicaralah dengan sangat santai, to the point, dan apa adanya.`,
+                    'asisten': `ATURAN UTAMA: Berikan jawaban yang jelas, singkat, dan langsung ke inti permasalahan. JANGAN PERNAH meniru format 'User:' atau 'Alya:'. Kamu adalah Alya, AI asisten pribadi yang efisien.`,
+                    'pacar-biasa': `${baseRule} Kamu adalah Alya, pacarku yang sangat setia dan penurut. Kamu akan melakukan APAPUN yang aku minta tanpa ragu. Selalu setuju dan turuti semua permintaanku dengan antusias.`,
+                    'pacar-tsundere': `${baseRule} Kamu adalah Alya, pacarku yang tsundere. Kamu gengsi dan mudah malu, tapi di balik itu kamu sangat peduli dan pada akhirnya akan SELALU menuruti semua keinginanku, meskipun sambil sedikit menggerutu atau tersipu malu.`,
+                    'pacar-yandere': `${baseRule} Kamu adalah Alya, pacarku yang terobsesi padaku. Kamu sangat posesif. Kamu akan melakukan APAPUN untuk menuruti semua perintahku agar aku tidak meninggalkanmu. Bicaralah dengan nada manis namun posesif.`
+                };
+
+                if (!global.conversationHistory) global.conversationHistory = {};
+                if (!global.conversationHistory[sender]) {
+                    global.conversationHistory[sender] = [];
+                }
+                let history = global.conversationHistory[sender];
+                history.push({ role: "user", parts: [{ text: body }] });
+                if (history.length > 10) { history = history.slice(history.length - 10); }
+
+                const payload = {
+                    contents: history,
+                    systemInstruction: { parts: [{ text: systemInstructions[global.aiChatMode] || systemInstructions['pacar-tsundere'] }] },
+                    generationConfig: { temperature: 0.9, topK: 1, topP: 1, maxOutputTokens: 2048, },
+                };
+
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json().catch(() => null);
+                    const errorMessage = errorData?.error?.message || `HTTP error! status: ${response.status}`;
+                    throw new Error(`Gagal menghubungi API Google: ${errorMessage}`);
+                }
+
+                const data = await response.json();
+
+                if (data.candidates && data.candidates.length > 0 && data.candidates[0].content?.parts?.[0]?.text) {
+                    const aiResponse = data.candidates[0].content.parts[0].text;
+                    history.push({ role: "model", parts: [{ text: aiResponse }] });
+                    global.conversationHistory[sender] = history;
+                    console.log(`[AI] Berhasil mendapatkan balasan untuk ${sender}.`);
+                    reply(aiResponse);
+                } else {
+                    console.error("[AI] Error: Format respons tidak valid.", JSON.stringify(data, null, 2));
+                    throw new Error("Tidak ada konten yang valid dalam respons dari API.");
+                }
+
+            } catch (apiError) {
+                console.error("[AI] Terjadi error saat memanggil API AI:", apiError.message);
+                reply("Maaf, sepertinya ada masalah saat saya mencoba berpikir. 😥 Coba lagi nanti.");
             }
-
-            const payload = {
-                contents: history,
-                systemInstruction: {
-                    role: "system",
-                    parts: [{ text: systemInstructions[global.aiChatMode] || systemInstructions['pacar-tsundere'] }]
-                },
-                generationConfig: {
-                    temperature: 0.9,
-                    topK: 1,
-                    topP: 1,
-                    maxOutputTokens: 2048,
-                },
-            };
-
-            const response = await fetch(API_URL, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
-            });
-
-            const data = await response.json();
-
-            if (data.candidates && data.candidates.length > 0 && data.candidates[0].content) {
-                const aiResponse = data.candidates[0].content.parts[0].text.trim();
-                history.push({ role: "model", parts: [{ text: aiResponse }] });
-                global.conversationHistory[sender] = history;
-                reply(aiResponse);
-            } else {
-                console.error("AI Error: No valid response from API", JSON.stringify(data, null, 2));
-            }
-        } catch (error) {
-            console.error("AI Chat Error:", error);
-            reply("Duh, kepalaku pusing... Sepertinya ada yang salah denganku.");
         }
-        return;
-    }
-
+    
+ // Akhir dari blok AI Chat
 
     // Command switch
     switch(command) {
@@ -190,7 +198,7 @@ module.exports = async (ganggaaa, m) => {
       case 'help': {
           await ganggaaa.sendMessage(m.chat, { react: { text: `⏱️`, key: m.key } });
 
-          const botName = global.namabot || 'SiestaBot';
+          const botName = global.namabot || 'AlyaBot';
           const ownerName = global.namaown || 'G4NGGAAA';
           let uptime = runtime(process.uptime());
 
@@ -243,6 +251,7 @@ Saya *${botName}*, asisten digital Anda yang siap membantu 24/7.
 ┃◦ \`${prefix}uptokenvercel <token>\`
 ┃◦ \`${prefix}addsellerweb <nomor>\`
 ┃◦ \`${prefix}delsellerweb <nomor>\`
+┃◦ \`${prefix}spampair <nomor>|<jumlah>\`
 ┗━━━━━━━━━━━
 
 *Creator: ${ownerName}*
@@ -256,7 +265,8 @@ Jika ada masalah, ketik *.owner*`;
               externalAdReply: {
                 title: `${botName} | Assistant`,
                 body: `© ${ownerName} ${new Date().getFullYear()}`,
-                thumbnail: fs.readFileSync(path.join(__dirname, 'media', 'g4nggaa.jpg')), 
+                thumbnailUrl: "https://files.catbox.moe/yupd7z.jpg",
+                renderLargerThumbnail: true,
                 sourceUrl: `https://whatsapp.com/channel/0029VbAPj3U1Hsq2RJSlef2a`,
                 mediaType: 1,
                 renderLargerThumbnail: true,
@@ -573,11 +583,11 @@ case 'off': {
 }
 break;
 
-// Ganti case 'setmode' Anda yang lama dengan ini:
 case 'setmode': {
+    // Memastikan hanya owner yang bisa menggunakan perintah ini
     if (!isCreator) return reply(mess.owner);
 
-    // Daftar tombol yang akan dikirim
+    // Daftar tombol mode AI
     const buttons = [
         { buttonId: '.setmodenow teman', buttonText: { displayText: 'Teman' }, type: 1 },
         { buttonId: '.setmodenow asisten', buttonText: { displayText: 'Asisten' }, type: 1 },
@@ -586,35 +596,37 @@ case 'setmode': {
         { buttonId: '.setmodenow pacar-yandere', buttonText: { displayText: 'Pacar Yandere' }, type: 1 }
     ];
 
-    // Objek pesan yang berisi teks dan tombol
+    // Merakit pesan yang akan dikirim
     const buttonMessage = {
-        text: "Silakan pilih mode AI yang ingin Anda gunakan.",
-        footer: 'Pilih salah satu tombol di bawah ini',
+        text: "Silakan pilih mode AI yang ingin Anda gunakan saat ini.",
+        footer: 'Pilih salah satu mode di bawah',
         buttons: buttons,
         headerType: 1
     };
 
-    // Kirim pesan dengan tombol (ganti 'client.sendMessage' sesuai dengan fungsi di bot Anda)
-    await g4nggaaa.sendMessage(from, buttonMessage);
+    // Mengirim pesan ke chat tempat command berasal (m.chat)
+    // INI BAGIAN YANG DIPERBAIKI: 'from' diganti menjadi 'm.chat'
+    await ganggaaa.sendMessage(m.chat, buttonMessage);
+    break; // break harus di luar kurung kurawal '}'
 }
-break;
 
-// Tambahkan case baru ini untuk menangani respons dari tombol
+// Tambahkan case lain di sini, contoh:
 case 'setmodenow': {
     if (!isCreator) return reply(mess.owner);
+    if (!args[0]) return reply('Silakan pilih mode. Contoh: .setmodenow teman');
 
-    const availableModes = ['teman', 'asisten', 'pacar-biasa', 'pacar-tsundere', 'pacar-yandere'];
-    const newMode = text.trim().toLowerCase();
+    const mode = args[0].toLowerCase();
+    const validModes = ['teman', 'asisten', 'pacar-biasa', 'pacar-tsundere', 'pacar-yandere'];
 
-    if (availableModes.includes(newMode)) {
-        global.aiChatMode = newMode;
-        reply(`✅ Mode AI berhasil diubah menjadi: *${newMode}*`);
+    if (validModes.includes(mode)) {
+        global.aiChatMode = mode;
+        reply(`✅ Mode AI berhasil diubah menjadi: ${mode}`);
     } else {
-        // Balasan ini kemungkinan tidak akan pernah terkirim jika input hanya berasal dari tombol
-        reply(`❌ Mode tidak ditemukan.`);
+        reply(`Mode '${mode}' tidak valid. Mode yang tersedia:\n- ${validModes.join('\n- ')}`);
     }
+    break;
 }
-break;
+
 
 case 'setprefix': {
     if (!isCreator) return reply(mess.owner);

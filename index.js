@@ -14,7 +14,7 @@ const readline = require("readline");
 const PhoneNumber = require('awesome-phonenumber');
 const chalk = require('chalk');
 const fetch = require('node-fetch');
-const qrcode = require('qr-terminal'); // <-- Added for better QR code display in terminal
+const qrcode = require('qrcode-terminal'); // <-- Added for better QR code display in terminal
 
 // Helper function to ask questions in the terminal
 const question = (text) => {
@@ -51,7 +51,7 @@ async function Startganggaaa() {
     // --- Tampilan startup yang lebih menarik ---
     console.log(chalk.green.bold(`
     --------------------------------------
-    ☘️ Selamat datang di KaitoBot 1412
+    ☘️ Selamat datang di AlyaBot 
       terimakasih telah menggunakan script ini 👍
     --------------------------------------
     `));

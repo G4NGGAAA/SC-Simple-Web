@@ -7,14 +7,14 @@
 
 // --- JANGAN DIHAPUS
 global.owner = ["6285855962331"]; // Ganti dengan nomor Owner
-global.namabot = "KaitoBot";
+global.namabot = "AlyaBot";
 global.namaown = "G4NGGAAA";
 global.packname = "Sticker by";
-global.author = "KaitoBot";
+global.author = "AlyaBot";
 
 // --- PENGATURAN API & TOKEN
 // Masukkan API Key Gemini Anda di sini
-global.geminiKey = "AIzaSyAiEfDVmqB9k7idEur9VjlytOitKuPYUP4"; 
+global.geminiKey = "AIzaSyA0hBOwI0b1MB_CWxdTaL73rBiOvCNaYLw"; 
 
 // Token untuk fitur Web Development (Opsional)
 global.githubUsername = 'G4NGGAAA'; 
