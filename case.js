@@ -257,7 +257,7 @@ Jika ada masalah, ketik *.owner*`;
               externalAdReply: {
                 title: `${botName} | Assistant`,
                 body: `© ${ownerName} ${new Date().getFullYear()}`,
-                thumbnail: fs.readFileSync(path.join(__dirname, 'media', 'michie.jpg')), 
+                thumbnail: fs.readFileSync(path.join(__dirname, 'media', 'g4nggaa.jpg')), 
                 sourceUrl: `https://whatsapp.com/channel/0029VbAPj3U1Hsq2RJSlef2a`,
                 mediaType: 1,
                 renderLargerThumbnail: true,
