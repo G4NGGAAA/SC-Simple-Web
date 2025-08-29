@@ -1,9 +1,27 @@
 /*
+    ==================================================================================
     Base by https://github.com/G4NGGAAA
     Credits: G4NGGAAA
-    MODIFIED: Anti-spam measures, new UI, Auto-Sticker Reply, QR & Pairing.
+    MODIFIED: Anti-spam, new UI, Auto-Sticker, QR & Pairing, and Termux Support.
+    
     BOLEH AMBIL/RENAME
     ASAL JANGAN HAPUS CREDIT YAA 🎩🎩
+
+    --- PANDUAN INSTALASI DI TERMUX ---
+    1. Buka Termux dan jalankan perintah berikut satu per satu:
+       pkg update && pkg upgrade
+       pkg install nodejs git ffmpeg libwebp -y
+       
+    2. Clone repository (jika ada) atau salin file ini ke sebuah folder.
+       
+    3. Masuk ke folder tersebut dan install semua modul yang dibutuhkan:
+       npm install @whiskeysockets/baileys pino @hapi/boom awesome-phonenumber chalk node-fetch
+       
+    4. Jalankan bot:
+       node index.js  // Ganti 'index.js' dengan nama file Anda
+       
+    Pilih opsi 1 untuk menampilkan Kode QR langsung di terminal.
+    ==================================================================================
 */
 
 const { default: makeWASocket, DisconnectReason, jidDecode, proto, getContentType, useMultiFileAuthState, downloadContentFromMessage } = require("@whiskeysockets/baileys")
@@ -50,25 +68,22 @@ async function Startganggaaa() {
     // --- Tampilan startup yang lebih menarik ---
     console.log(chalk.green.bold(`
     --------------------------------------
-    ☘️ Selamat datang di KaitoBot 1412
+    🎩 Selamat datang di SiestaBot 1412
       terimakasih telah menggunakan script ini 👍
     --------------------------------------
     `));
-
     console.log(chalk.yellow.bold("📁     Inisialisasi modul..."));
     console.log(chalk.cyan.bold("- API Baileys Telah Dimuat"));
     console.log(chalk.cyan.bold("- Sistem File Siap Digunakan"));
     console.log(chalk.cyan.bold("- Database Telah Diinisialisasi"));
-
     console.log(chalk.blue.bold("\n🤖 Info Bot:"));
     console.log(chalk.white.bold("   | GitHub: ") + chalk.cyan.bold("https://github.com/G4NGGAAA"));
     console.log(chalk.white.bold("   | Developer: ") + chalk.green.bold("G4NGGAAA"));
     console.log(chalk.white.bold("   | Status Server: ") + chalk.green.bold("Online"));
     console.log(chalk.white.bold("   | Versi Node.js: ") + chalk.magenta.bold(process.version));
-    console.log(chalk.white.bold("   | Browser ID: ") + chalk.yellow.bold(selectedBrowser.join(' '))); // Display selected browser
+    console.log(chalk.white.bold("   | Browser ID: ") + chalk.yellow.bold(selectedBrowser.join(' ')));
     console.log(chalk.yellow.bold("\n✨ Fitur Unggulan Aktif:")); 
     console.log(chalk.white.bold("   | Auto-Sticker Reply (Delayed)"));
-
 
     // --- Check for existing session ---
     if (!fs.existsSync('./session/creds.json')) {
@@ -93,8 +108,13 @@ async function Startganggaaa() {
                 process.exit(1);
             }
         } else {
-            ganggaaa = makeWASocket({ logger: pino({ level: "silent" }), printQRInTerminal: true, auth: state, browser: selectedBrowser });
-            console.log(chalk.yellow.bold('\nPindai kode QR di bawah ini dengan aplikasi WhatsApp Anda.\n'));
+            // Opsi ini akan menampilkan QR code di terminal, sangat cocok untuk Termux
+            ganggaaa = makeWASocket({ 
+                logger: pino({ level: "silent" }), 
+                printQRInTerminal: true, 
+                auth: state, 
+                browser: selectedBrowser 
+            });
         }
     } else {
         console.log(chalk.green.bold('\nMenemukan sesi yang ada. Menghubungkan secara otomatis...'));
@@ -121,8 +141,7 @@ async function Startganggaaa() {
             const m = smsg(ganggaaa, mek, contacts)
             const pushname = m.pushName || 'Unknown'
             const budy = (typeof m.text === 'string' ? m.text : '')
-            const command = budy.toLowerCase().split(' ')[0] || ''
-
+            
             // --- Fitur Balasan Stiker Otomatis (dengan delay anti-spam) ---
             if (!m.isGroup) {
                  const stickerKeywords = {
@@ -131,11 +150,8 @@ async function Startganggaaa() {
                  };
                  if (stickerKeywords[budy.toLowerCase()]) {
                      try {
-                        // Random delay between 1 to 3 seconds
                         await sleep(Math.floor(Math.random() * 2000) + 1000); 
-                        
-                        await ganggaaa.sendPresenceUpdate('composing', m.chat); // Show 'typing...'
-
+                        await ganggaaa.sendPresenceUpdate('composing', m.chat);
                         let response = await fetch(stickerKeywords[budy.toLowerCase()]);
                         let data = await response.json();
                         await ganggaaa.sendMessage(m.chat, { sticker: { url: data.url } });
@@ -146,7 +162,7 @@ async function Startganggaaa() {
                  }
             }
 
-
+            // --- Logging Pesan ---
             if (m.message && m.isGroup) {
                 try {
                     const groupMetadata = await ganggaaa.groupMetadata(m.chat);
@@ -168,65 +184,73 @@ async function Startganggaaa() {
 └────────────────────────────────────────┘`);
             }
 
-            // Pass the processed message to the command handler
-            require("./case")(ganggaaa, m, chatUpdate, contacts)
+            // Memanggil command handler dari file terpisah
+            // Pastikan Anda memiliki file bernama "case.js" di folder yang sama
+            // require("./case")(ganggaaa, m, chatUpdate, contacts)
         } catch (err) {
             console.log(err)
         }
     })
 
-    ganggaaa.decodeJid = (jid) => {
-        if (!jid) return jid
-        if (/:\d+@/gi.test(jid)) {
-            let decode = jidDecode(jid) || {}
-            return decode.user && decode.server && decode.user + '@' + decode.server || jid
-        } else return jid
-    }
-
-    ganggaaa.getName = async(jid, withoutContact = false) => {
-        let id = ganggaaa.decodeJid(jid)
-        withoutContact = ganggaaa.withoutContact || withoutContact
-        let v
-        if (id.endsWith("@g.us")) {
-            try {
-                v = await ganggaaa.groupMetadata(id) || {};
-                return v.subject || PhoneNumber('+' + id.replace('@s.whatsapp.net', '')).getNumber('international');
-            } catch (err) {
-                return PhoneNumber('+' + id.replace('@s.whatsapp.net', '')).getNumber('international');
-            }
-        } else {
-            v = id === '0@s.whatsapp.net' ? { id, name: 'WhatsApp' } : id === ganggaaa.decodeJid(ganggaaa.user.id) ?
-                ganggaaa.user : (contacts[id] || {});
-            return (withoutContact ? '' : v.name) || v.verifiedName || PhoneNumber('+' + jid.replace('@s.whatsapp.net', '')).getNumber('international');
-        }
-    }
-
-    ganggaaa.public = true // Set to true to respond to everyone
-    ganggaaa.serializeM = (m) => smsg(ganggaaa, m, contacts);
-
+    // --- DIUBAH: Handler koneksi yang lebih informatif ---
     ganggaaa.ev.on('connection.update', (update) => {
-        const { connection, lastDisconnect } = update;
+        const { connection, lastDisconnect, qr } = update;
+
+        // Menampilkan QR Code jika tersedia
+        if (qr) {
+            console.log(chalk.yellow.bold('\n[!] Silakan pindai Kode QR ini untuk terhubung.'));
+            console.log(chalk.cyan('-> Tips Pengguna Termux: Cubit layar (zoom out) jika QR code terlalu besar.\n'));
+        }
+
         if (connection === 'close') {
-            let reason = new Boom(lastDisconnect?.error)?.output.statusCode;
-            if ([DisconnectReason.badSession, DisconnectReason.connectionClosed, DisconnectReason.connectionLost, DisconnectReason.connectionReplaced, DisconnectReason.restartRequired, DisconnectReason.timedOut].includes(reason)) {
-                console.log(chalk.yellow('Koneksi bermasalah, mencoba menyambung kembali...'));
+            const reason = new Boom(lastDisconnect?.error)?.output.statusCode;
+            const shouldReconnect = [
+                DisconnectReason.badSession, DisconnectReason.connectionClosed,
+                DisconnectReason.connectionLost, DisconnectReason.connectionReplaced,
+                DisconnectReason.restartRequired, DisconnectReason.timedOut
+            ].includes(reason);
+
+            if (shouldReconnect) {
+                console.log(chalk.yellow('Koneksi terputus, mencoba menyambung kembali...'));
                 Startganggaaa();
             } else if (reason === DisconnectReason.loggedOut) {
-                console.log(chalk.red('Perangkat Keluar, harap hapus folder "session" dan mulai ulang.'));
+                console.log(chalk.red('Perangkat Keluar. Hapus folder "session" dan pindai ulang QR.'));
                 process.exit();
             } else {
-                ganggaaa.end(`Unknown DisconnectReason: ${reason}|${connection}`);
+                console.error(chalk.red('Koneksi ditutup, alasan tidak diketahui. Mencoba menghubungkan kembali...'), lastDisconnect);
+                Startganggaaa();
             }
         } else if (connection === 'open') {
-            console.log(chalk.green.bold('\n[Terhubung] Berhasil terhubung ke WhatsApp! Bot sekarang online.'));
-            console.log(chalk.cyan.italic('ID Pengguna Terhubung: ' + JSON.stringify(ganggaaa.user.id, null, 2)));
+            console.log(chalk.green.bold('\n[Terhubung] Bot berhasil terhubung ke WhatsApp! ✅'));
+            console.log(chalk.cyan.italic('ID Pengguna: ' + ganggaaa.user.id));
         }
     });
 
     ganggaaa.ev.on('creds.update', saveCreds)
-    ganggaaa.sendText = (jid, text, quoted = '', options) => ganggaaa.sendMessage(jid, { text: text, ...options }, { quoted })
+    
+    // --- Helper Functions ---
+    ganggaaa.decodeJid = (jid) => {
+        if (!jid) return jid;
+        if (/:\d+@/gi.test(jid)) {
+            let decode = jidDecode(jid) || {};
+            return decode.user && decode.server && decode.user + '@' + decode.server || jid;
+        } else return jid;
+    }
 
-    ganggaaa.downloadMediaMessage = async(message) => {
+    ganggaaa.getName = async (jid, withoutContact = false) => {
+        let id = ganggaaa.decodeJid(jid);
+        let v;
+        if (id.endsWith("@g.us")) {
+            v = contacts[id] || {};
+            if (!(v.name || v.subject)) v = await ganggaaa.groupMetadata(id) || {};
+            return v.name || v.subject || PhoneNumber('+' + id.replace('@s.whatsapp.net', '')).getNumber('international');
+        } else v = id === '0@s.whatsapp.net' ? { id, name: 'WhatsApp' } : id === ganggaaa.decodeJid(ganggaaa.user.id) ? ganggaaa.user : (contacts[id] || {});
+        return (withoutContact ? '' : v.name) || v.subject || v.verifiedName || PhoneNumber('+' + jid.replace('@s.whatsapp.net', '')).getNumber('international');
+    }
+
+    ganggaaa.public = true
+    ganggaaa.sendText = (jid, text, quoted = '', options) => ganggaaa.sendMessage(jid, { text: text, ...options }, { quoted })
+    ganggaaa.downloadMediaMessage = async (message) => {
         let mime = (message.msg || message).mimetype || ''
         let messageType = message.mtype ? message.mtype.replace(/Message/gi, '') : mime.split('/')[0]
         const stream = await downloadContentFromMessage(message, messageType)
@@ -236,7 +260,6 @@ async function Startganggaaa() {
         }
         return buffer
     }
-
     return ganggaaa
 }
 
@@ -295,7 +318,8 @@ function smsg(ganggaaa, m, contacts) {
 let file = require.resolve(__filename)
 fs.watchFile(file, () => {
     fs.unwatchFile(file)
-    console.log(chalk.yellow(`Update detected in ${__filename}`))
+    console.log(chalk.yellow(`Update detected in ${__filename}, restarting...`))
     delete require.cache[file]
     require(file)
 })
+         
