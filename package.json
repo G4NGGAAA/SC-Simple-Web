@@ -12,6 +12,7 @@
     "@whiskeysockets/baileys": "latest",
     "awesome-phonenumber": "latest",
     "pino": "latest",
+    "node-fetch": "^3.3.2",
     "form-data": "latest",
     "axios": "latest"
   }
