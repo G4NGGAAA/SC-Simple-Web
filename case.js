@@ -221,6 +221,11 @@ Saya *${botName}*, asisten digital Anda yang siap membantu 24/7.
 ┃◦ \`${prefix}vercel-deploy <namaWeb>\` (Reply HTML/ZIP)
 ┃◦ \`${prefix}listvercel\`
 ┃◦ \`${prefix}delvercel <namaWeb>\`
+┃◦ \`${prefix}gitclone <linknya>\`
+┃◦ \`${prefix}addrepo <nama>|<deskripsi>|<private/public>\`
+┃◦ \`${prefix}checkrepo <namaRepo>\`
+┃◦ \`${prefix}delrepo <namaRepo>\`
+┃◦ \`${prefix}listrepo\`
 ┗━━━━━━━━━━━
 
 ┏━⭓ *GROUP ADMIN* 👑
@@ -505,7 +510,149 @@ case 'gitclone': {
   }
 }
 break;
-       
+case 'addrepo': {
+  if (!isCreator) return m.reply("❗ *Access Denied*\nFitur Only `Owner`");
+
+  if (!text.includes("|")) return m.reply("❌ Format salah!\nGunakan: .addrepo <nama>|<deskripsi>|<private/public>");
+
+  const [nama, deskripsi, privasi] = text.split("|").map(a => a.trim());
+  if (!nama || !deskripsi || !privasi) return m.reply("⚠️ Format tidak lengkap!");
+
+  const isPrivate = privasi.toLowerCase() === 'private';
+
+  const fetch = require("node-fetch");
+  const res = await fetch(`https://api.github.com/user/repos`, {
+    method: "POST",
+    headers: {
+      "Authorization": `token ${global.githubToken}`,
+      "Accept": "application/vnd.github+json"
+    },
+    body: JSON.stringify({
+      name: nama,
+      description: deskripsi,
+      private: isPrivate
+    })
+  });
+
+  const data = await res.json();
+
+  if (res.ok) {
+    m.reply(`✅ *Repository berhasil dibuat!*\n\n📦 Nama: ${data.name}\n🔒 Private: ${data.private}\n🔗 URL: ${data.html_url}`);
+  } else {
+    m.reply(`❌ Gagal membuat repository.\n\n${JSON.stringify(data, null, 2)}`);
+  }
+}
+break;
+case 'checkrepo': {
+  if (!isCreator) return m.reply("❗ *Access Denied*\nFitur Only `Owner`");
+  if (!text) return m.reply("⚠️ Masukkan nama repository!\nContoh: .checkrepo my-repo");
+
+  const fetch = require("node-fetch");
+  try {
+    const repoName = text.trim();
+
+    // Ambil info repo
+    const resInfo = await fetch(`https://api.github.com/repos/${global.githubUsername}/${repoName}`, {
+      headers: {
+        "Authorization": `token ${global.githubToken}`,
+        "Accept": "application/vnd.github+json"
+      }
+    });
+
+    const repoInfo = await resInfo.json();
+    if (!resInfo.ok) {
+      return m.reply(`❌ Repository tidak ditemukan!\n\n${JSON.stringify(repoInfo, null, 2)}`);
+    }
+
+    // Ambil daftar file
+    const resContent = await fetch(`https://api.github.com/repos/${global.githubUsername}/${repoName}/contents`, {
+      headers: {
+        "Authorization": `token ${global.githubToken}`,
+        "Accept": "application/vnd.github+json"
+      }
+    });
+
+    const contents = await resContent.json();
+    if (!Array.isArray(contents)) {
+      return m.reply(`❌ Gagal mengambil konten repository.`);
+    }
+
+    let listFiles = contents.map(v => `📄 ${v.name}`).join("\n");
+    let total = contents.length;
+    let status = repoInfo.private ? "🔒 Private" : "🌐 Public";
+    let createdAt = new Date(repoInfo.created_at).toLocaleString('id-ID');
+
+    m.reply(`*📦 Info Repository*\n\n` +
+            `• Nama: ${repoInfo.name}\n` +
+            `• Status: ${status}\n` +
+            `• Dibuat: ${createdAt}\n` +
+            `• Jumlah File: ${total}\n\n` +
+            `*📁 File:*\n${listFiles}`);
+  } catch (e) {
+    console.error(e);
+    m.reply("❌ Terjadi kesalahan saat memeriksa repository.");
+  }
+}
+break;
+case 'delrepo': {
+  if (!isCreator) return m.reply("❗ *Access Denied*\nFitur Only `Owner`");
+  if (!text) return m.reply("❌ *Format salah!*\nGunakan: .delrepo <nama_repository>");
+
+  const fetch = require("node-fetch");
+  const repoName = text.trim();
+  const username = global.githubUsername; // pastikan ini diset di settings.js
+
+  try {
+    const res = await fetch(`https://api.github.com/repos/${username}/${repoName}`, {
+      method: "DELETE",
+      headers: {
+        "Authorization": `token ${global.githubToken}`,
+        "Accept": "application/vnd.github+json"
+      }
+    });
+
+    if (res.status === 204) {
+      m.reply(`✅ Repository *${repoName}* berhasil dihapus.`);
+    } else if (res.status === 404) {
+      m.reply(`❌ Repository *${repoName}* tidak ditemukan.`);
+    } else {
+      const error = await res.json();
+      console.log(error);
+      m.reply("❌ Gagal menghapus repository.");
+    }
+  } catch (err) {
+    console.error(err);
+    m.reply("❌ Terjadi kesalahan saat menghapus repository.");
+  }
+}
+break;
+case 'listrepo': {
+  if (!isCreator) return m.reply("❗ *Access Denied*\nFitur Only `Owner`");
+  
+  try {
+    const res = await fetch(`https://api.github.com/user/repos`, {
+      headers: {
+        "Authorization": `token ${global.githubToken}`,
+        "Accept": "application/vnd.github+json"
+      }
+    });
+    const data = await res.json();
+
+    if (!Array.isArray(data)) return m.reply("❌ Gagal mengambil repository!");
+
+    if (data.length === 0) return m.reply("ℹ️ Belum ada repository.");
+
+    const list = data.map((repo, i) => 
+      `*${i + 1}. ${repo.name}*\n> ${repo.private ? '🔒 Private' : '🌐 Public'}\n> ${repo.html_url}`
+    ).join("\n\n");
+
+    m.reply(`📁 *List Repository GitHub:*\n\n${list}`);
+  } catch (err) {
+    console.error(err);
+    m.reply("❌ Terjadi kesalahan saat mengambil data.");
+  }
+}
+break;
 //═══════════[ UNIQUE FEATURES ]══════════════//
 // ... (Kode fitur unique tetap sama, tidak perlu diubah)
 case 'getpp': {
