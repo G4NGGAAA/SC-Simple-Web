@@ -251,7 +251,6 @@ Saya *${botName}*, asisten digital Anda yang siap membantu 24/7.
 ┃◦ \`${prefix}uptokenvercel <token>\`
 ┃◦ \`${prefix}addsellerweb <nomor>\`
 ┃◦ \`${prefix}delsellerweb <nomor>\`
-┃◦ \`${prefix}spampair <nomor>|<jumlah>\`
 ┗━━━━━━━━━━━
 
 *Creator: ${ownerName}*
@@ -479,7 +478,34 @@ case 'delvercel': {
     }
 }
 break;
-
+          
+case 'git':
+case 'gitclone': {
+  try {
+    if (!args[0]) return m.reply(`Contoh: ${p_c} linknya`)
+    if (!isUrl(args[0]) && !args[0].includes('github.com')) return m.reply(`Harus berupa link github!`)
+    let regex1 = /(?:https|git)(?::\/\/|@)github\.com[\/:]([^\/:]+)\/(.+)/i
+    var [, user, repo] = args[0].match(regex1) || []
+    repo = repo.replace(/.git$/, '')
+    var url = `https://api.github.com/repos/${user}/${repo}/zipball`
+    let filename = (await fetch(url, {
+      method: 'HEAD'
+    })).headers.get('content-disposition').match(/attachment; filename=(.*)/)[1]
+    ganggaaa.sendMessage(m.chat, {
+      document: {
+        url: url
+      },
+      fileName: filename + '.zip',
+      mimetype: 'application/zip'
+    }, {
+      quoted: WaBis
+    })
+  } catch (err) {
+    m.reply('Terjadi kesalahan')
+  }
+}
+break;
+       
 //═══════════[ UNIQUE FEATURES ]══════════════//
 // ... (Kode fitur unique tetap sama, tidak perlu diubah)
 case 'getpp': {
@@ -627,7 +653,36 @@ case 'setmodenow': {
     break;
 }
 
+case 'modegrup':
+case 'gconly': {
+  if (!isCreator) return onlyOwn()
+  if (!args[0]) return m.reply(`Contoh: ${p_c} on/off`)
+  if (args[0] === 'on') {
+    global.gconly = true
+    global.pconly = false
+    await m.reply('Sukses mengubah ke mode gc-only.')
+  } else if (args[0] === 'off') {
+    global.gconly = false
+    await m.reply('Sukses mengubah ke mode gc/pc only.')
+  }
+}
+break;
 
+case 'modepv':
+case 'pconly': {
+  if (!isCreator) return onlyOwn()
+  if (!args[0]) return m.reply(`Contoh: ${p_c} on/off`)
+  if (args[0] === 'on') {
+    global.pconly = true
+    global.gconly = false
+    await m.reply('Sukses mengubah ke mode pc-only.')
+  } else if (args[0] === 'off') {
+    global.pconly = false
+    await m.reply('Sukses mengubah ke mode gc/pc only.')
+  }
+}
+break;
+     
 case 'setprefix': {
     if (!isCreator) return reply(mess.owner);
     if (!text) return reply('Penggunaan: .setprefix <prefix_baru>');
@@ -672,44 +727,6 @@ case 'uptokenvercel': {
     } catch (err) {
         console.error(err);
         reply(`❌ Gagal memperbarui token: ${err.message}`);
-    }
-}
-break;
-
-case 'spampair': {
-    if (!isCreator) return reply(mess.owner);
-    if (!text) return reply(`*Contoh:* ${prefix + command} 628xxxx|10`);
-    let [target, count = 10] = text.split("|");
-    target = target.replace(/[^0-9]/g, '').trim();
-    count = parseInt(count);
-    if (isNaN(count) || count <= 0) return reply("Jumlah spam harus berupa angka dan lebih dari 0.");
-    await reply(`Memulai spam pairing code ke *${target}* sebanyak *${count}* kali...`);
-    try {
-        let { default: makeWaSocket, useMultiFileAuthState, fetchLatestBaileysVersion } = require('@whiskeysockets/baileys');
-        const tempSessionPath = path.join(__dirname, 'session_spam');
-        let { state } = await useMultiFileAuthState(tempSessionPath);
-        let { version } = await fetchLatestBaileysVersion();
-        let pino = require("pino");
-        let spamSocket = makeWaSocket({ auth: state, version, logger: pino({ level: 'silent' }) });
-        let successCount = 0;
-        for (let i = 0; i < count; i++) {
-            await sleep(2000);
-            try {
-                const code = await spamSocket.requestPairingCode(target);
-                if (code) {
-                    successCount++;
-                    console.log(`Spam Pairing ke-${i+1} ke ${target} berhasil. Kode: ${code}`);
-                }
-            } catch (e) {
-                console.log(`Gagal mengirim pairing code #${i+1} ke ${target}: ${e.message}`);
-            }
-        }
-        reply(`✅ Selesai! Berhasil mengirim ${successCount} dari ${count} permintaan pairing code.`);
-        spamSocket.ws.close();
-        setTimeout(() => fs.rmSync(tempSessionPath, { recursive: true, force: true }), 5000);
-    } catch (error) {
-        console.error(error);
-        reply("Terjadi error saat spam pairing code. Cek console log.");
     }
 }
 break;
