@@ -14,7 +14,7 @@ global.author = "AlyaBot";
 
 // --- PENGATURAN API & TOKEN
 // Masukkan API Key Gemini Anda di sini
-global.geminiKey = "AIzaSyA0hBOwI0b1MB_CWxdTaL73rBiOvCNaYLw"; 
+global.geminiKey = "IS SENDIR"; 
 
 // Token untuk fitur Web Development (Opsional)
 global.githubUsername = 'G4NGGAAA'; 
