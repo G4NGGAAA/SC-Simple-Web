@@ -991,6 +991,60 @@ case "hidetag": {
 break;
 
       default:
+if (budy.startsWith('>')) {
+if (!isCreator) return
+try {
+let evaled = await eval(budy.slice(2))
+if (typeof evaled !== 'string') evaled = require('util').inspect(evaled)
+await m.reply(evaled)
+} catch (err) {
+await m.reply(String(err))
+}}
+
+// =================================== //
+
+if (m.text.toLowerCase() == "tes") {
+m.reply("Online ☕")
+}
+if (m.text.toLowerCase() == `@${global.owner}`) {
+m.reply("Kenapa kak")
+}  
+if (m.text.toLowerCase() == "bot") {
+m.reply("Hi Ada Yang Bisa Saya Bantu Hari Ini😄?")
+}        
+if (m.text.toLowerCase() == "🗿") {
+m.reply("Jangan emot batu kakaw ^ // ^☹️")
+}
+if (m.text.toLowerCase() == "assalamualaikum") {
+m.reply("waalaikumsalam wr wb")
+}
+if (m.text.toLowerCase() == `@${nomorbot}`) {
+m.reply(`Oy napa`)
+}
+
+// =================================== //
+
+if (budy.startsWith('=>')) {
+if (!isCreator) return
+try {
+let evaled = await eval(`(async () => { ${budy.slice(2)} })()`)
+if (typeof evaled !== 'string') evaled = require('util').inspect(evaled)
+await m.reply(evaled)
+} catch (err) {
+await m.reply(String(err))
+}}
+
+// =================================== //
+
+if (budy.startsWith('$')) {
+if (!isCreator) return
+if (!text) return
+exec(budy.slice(2), (err, stdout) => {
+if (err) return m.reply(`${err}`)
+if (stdout) return m.reply(stdout)
+})
+}
+
         if (isCmd) {
             console.log(`Unknown command: ${command} from ${sender}`);
         }
