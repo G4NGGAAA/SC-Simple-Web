@@ -1,20 +1,25 @@
 /*
     Base by https://github.com/G4NGGAAA
     Credits: G4NGGAAA
-    MODIFIED: Anti-spam measures, new UI, Auto-Sticker Reply, QR & Pairing, qr-terminal support for Termux.
+    MODIFIED: Multi-Account, Panel Commands, Enhanced UI, Logger Module, Anti-spam, Auto-Sticker Reply, QR & Pairing.
     BOLEH AMBIL/RENAME
     ASAL JANGAN HAPUS CREDIT YAA 🎩🎩
 */
 
 const { default: makeWASocket, DisconnectReason, jidDecode, proto, getContentType, useMultiFileAuthState, downloadContentFromMessage } = require("@whiskeysockets/baileys");
-const pino = require('pino');
 const { Boom } = require('@hapi/boom');
 const fs = require('fs');
+const path = require('path');
 const readline = require("readline");
 const PhoneNumber = require('awesome-phonenumber');
 const chalk = require('chalk');
 const fetch = require('node-fetch');
-const qrcode = require('qrcode-terminal'); // <-- Added for better QR code display in terminal
+const qrcode = require('qrcode-terminal');
+const logger = require('./logger'); // <-- Import our new logger
+
+// --- Global State Management for Multiple Bots ---
+const botInstances = {};
+let sessionCounter = 1;
 
 // Helper function to ask questions in the terminal
 const question = (text) => {
@@ -33,98 +38,91 @@ const question = (text) => {
 // Helper function for creating delays
 const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
-//~~~~~Main Connection Function~~~~~//
-async function Startganggaaa() {
-    const { state, saveCreds } = await useMultiFileAuthState("session");
+//~~~~~Main Bot Connection Function~~~~~//
+async function startBot(sessionName, isFirstBot = false) {
+    logger.info(`Starting bot for session: ${sessionName}...`);
+    const { state, saveCreds } = await useMultiFileAuthState(sessionName);
     let ganggaaa;
 
-    // --- NEW: Randomized browser identity to avoid spam detection ---
     const browsers = [
-        ["Ubuntu", "Chrome", "20.0.04"],
-        ["Windows", "Chrome", "108.0.0.0"],
-        ["Mac OS", "Safari", "15.3"],
-        ["Windows", "Firefox", "107.0"],
-        ["Mac OS", "Chrome", "108.0.0.0"]
+        ["AlyaBot", "Chrome", "12.0.0"],
+        ["AlyaBot", "Safari", "15.3"],
+        ["AlyaBot", "Firefox", "107.0"],
     ];
     const selectedBrowser = browsers[Math.floor(Math.random() * browsers.length)];
 
-    // --- Tampilan startup yang lebih menarik ---
-    console.log(chalk.green.bold(`
-    --------------------------------------
-    ☘️ Selamat datang di AlyaBot 
-      terimakasih telah menggunakan script ini 👍
-    --------------------------------------
-    `));
+    const connectOptions = {
+        logger: require('pino')({ level: "silent" }),
+        printQRInTerminal: false, // We will handle QR display manually
+        auth: state,
+        browser: selectedBrowser,
+        getMessage: async (key) => { return { conversation: 'hi' } } // Required for some functionalities
+    };
 
-    console.log(chalk.yellow.bold("📁      Inisialisasi modul..."));
-    console.log(chalk.cyan.bold("- API Baileys Telah Dimuat"));
-    console.log(chalk.cyan.bold("- Sistem File Siap Digunakan"));
-    console.log(chalk.cyan.bold("- Database Telah Diinisialisasi"));
+    ganggaaa = makeWASocket(connectOptions);
+    botInstances[sessionName] = ganggaaa; // Store instance
 
-    console.log(chalk.blue.bold("\n🤖 Info Bot:"));
-    console.log(chalk.white.bold("   | GitHub: ") + chalk.cyan.bold("https://github.com/G4NGGAAA"));
-    console.log(chalk.white.bold("   | Developer: ") + chalk.green.bold("G4NGGAAA"));
-    console.log(chalk.white.bold("   | Status Server: ") + chalk.green.bold("Online"));
-    console.log(chalk.white.bold("   | Versi Node.js: ") + chalk.magenta.bold(process.version));
-    console.log(chalk.white.bold("   | Browser ID: ") + chalk.yellow.bold(selectedBrowser.join(' '))); // Display selected browser
-    console.log(chalk.yellow.bold("\n✨ Fitur Unggulan Aktif:"));
-    console.log(chalk.white.bold("   | Auto-Sticker Reply (Delayed)"));
-
-
-    // --- Check for existing session ---
-    if (!fs.existsSync('./session/creds.json')) {
-        const choice = await question(
-            chalk.yellow.bold('\nBagaimana Anda ingin terhubung?\n') +
-            chalk.cyan('1: ') + chalk.white('Pindai Kode QR\n') +
-            chalk.cyan('2: ') + chalk.white('Gunakan Kode Pemasangan\n\n') +
-            chalk.magenta('Masukkan pilihan Anda (1 atau 2): ')
-        );
+    // --- Login Logic: QR/Pairing for first bot, Pairing only for others ---
+    if (!ganggaaa.authState.creds.registered) {
+        let choice = '1'; // Default to QR for the first bot
+        if (isFirstBot) {
+            choice = await question(
+                chalk.yellow.bold('\nHow do you want to connect the main bot?\n') +
+                chalk.cyan('1: ') + chalk.white('Scan QR Code\n') +
+                chalk.cyan('2: ') + chalk.white('Use Pairing Code\n\n') +
+                chalk.magenta('Enter your choice (1 or 2): ')
+            );
+        } else {
+            logger.info(`Adding a new user. Please use Pairing Code.`);
+            choice = '2';
+        }
 
         if (choice.trim() === '2') {
-            ganggaaa = makeWASocket({ logger: pino({ level: "silent" }), printQRInTerminal: false, auth: state, browser: selectedBrowser });
-            const phoneNumber = await question(chalk.yellow.bold('\nSilakan masukkan nomor telepon bot Anda (contoh: 6281234567890):\n'));
-            console.log(chalk.blue('Meminta kode pemasangan...'));
+            const phoneNumber = await question(chalk.yellow.bold('\nPlease enter the bot\'s phone number (e.g., 6281234567890):\n'));
             try {
+                logger.info('Requesting pairing code...');
                 let code = await ganggaaa.requestPairingCode(phoneNumber.trim());
                 code = code?.match(/.{1,4}/g)?.join("-") || code;
-                console.log(chalk.green.bold('Kode Pemasangan Anda: '), chalk.white.bgBlack.bold(` ${code} `));
-                console.log(chalk.yellow('Silakan masukkan kode ini di WhatsApp pada perangkat utama Anda.'));
+                logger.success('Your Pairing Code: ' + chalk.white.bgBlack.bold(` ${code} `));
+                logger.info('Please enter this code on WhatsApp on your main device.');
             } catch (e) {
-                console.error(chalk.red('Gagal meminta kode pemasangan. Silakan mulai ulang dan coba lagi.'), e);
-                process.exit(1);
+                logger.error('Failed to request pairing code. Please restart and try again.', e);
+                delete botInstances[sessionName]; // Clean up failed instance
+                return;
             }
-        } else {
-            // Using QR code, but will be handled by the 'connection.update' event
-            ganggaaa = makeWASocket({ logger: pino({ level: "silent" }), printQRInTerminal: false, auth: state, browser: selectedBrowser });
         }
-    } else {
-        console.log(chalk.green.bold('\nMenemukan sesi yang ada. Menghubungkan secara otomatis...'));
-        ganggaaa = makeWASocket({ logger: pino({ level: "silent" }), printQRInTerminal: false, auth: state, browser: selectedBrowser });
+        // QR code will be handled by the 'connection.update' event
     }
 
     const contacts = {};
 
     ganggaaa.ev.on('contacts.update', updates => {
         for (const update of updates) {
-            contacts[update.id] = {...contacts[update.id], ...update };
+            contacts[update.id] = { ...contacts[update.id], ...update };
         }
     });
 
     ganggaaa.ev.on('messages.upsert', async chatUpdate => {
         try {
-            let mek = chatUpdate.messages[0]
-            if (!mek.message) return
-            mek.message = (Object.keys(mek.message)[0] === 'ephemeralMessage') ? mek.message.ephemeralMessage.message : mek.message
-            if (mek.key && mek.key.remoteJid === 'status@broadcast') return
-            if (!ganggaaa.public && !mek.key.fromMe && chatUpdate.type === 'notify') return
-            if (mek.key.id.startsWith('BAE5') && mek.key.id.length === 16) return
+            let mek = chatUpdate.messages[0];
+            if (!mek.message || (mek.key && mek.key.remoteJid === 'status@broadcast') || (mek.key.id.startsWith('BAE5') && mek.key.id.length === 16)) return;
+            
+            mek.message = (Object.keys(mek.message)[0] === 'ephemeralMessage') ? mek.message.ephemeralMessage.message : mek.message;
 
-            const m = smsg(ganggaaa, mek, contacts)
-            const pushname = m.pushName || 'Unknown'
-            const budy = (typeof m.text === 'string' ? m.text : '')
-            const command = budy.toLowerCase().split(' ')[0] || ''
+            const m = smsg(ganggaaa, mek, contacts);
+            const pushname = m.pushName || 'Unknown';
+            const budy = (typeof m.text === 'string' ? m.text : '');
 
-            // --- Fitur Balasan Stiker Otomatis (dengan delay anti-spam) ---
+            // Log messages using the new logger
+            if (m.isGroup) {
+                const groupMetadata = await ganggaaa.groupMetadata(m.chat);
+                const groupName = groupMetadata.subject || 'Unknown Group';
+                logger.logGroup(pushname, budy || m.mtype, groupName);
+            } else {
+                logger.logPrivate(pushname, budy || m.mtype);
+            }
+            
+            // --- Auto Sticker Reply Feature (with anti-spam delay) ---
             if (!m.isGroup) {
                 const stickerKeywords = {
                     'hai': 'https://api.waifu.pics/sfw/wave',
@@ -134,125 +132,159 @@ async function Startganggaaa() {
                 };
                 if (stickerKeywords[budy.toLowerCase()]) {
                     try {
-                        // Random delay between 1 to 3 seconds
-                        await sleep(Math.floor(Math.random() * 2000) + 1000);
-
-                        await ganggaaa.sendPresenceUpdate('composing', m.chat); // Show 'typing...'
-
+                        await sleep(Math.floor(Math.random() * 2000) + 1000); // Random delay
+                        await ganggaaa.sendPresenceUpdate('composing', m.chat);
                         let response = await fetch(stickerKeywords[budy.toLowerCase()]);
                         let data = await response.json();
                         await ganggaaa.sendMessage(m.chat, { sticker: { url: data.url } });
-                        console.log(chalk.bgGreen.white(`[AUTO STICKER]`), `Replied to "${budy}" with a sticker for ${pushname}.`);
                     } catch (err) {
-                        console.log(chalk.red('Gagal mengirim stiker otomatis:'), err);
+                        logger.error('Failed to send auto sticker:', err);
                     }
                 }
             }
-
-
-            if (m.message && m.isGroup) {
-                try {
-                    const groupMetadata = await ganggaaa.groupMetadata(m.chat);
-                    const groupName = groupMetadata.subject || 'Unknown Group';
-                    console.log(`
-┌────────── [ GROUP CHAT LOG ] ──────────┐
-│ 🕒 Waktu      : ${chalk.green(new Date().toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' }))}
-│ 📝 Pesan      : ${chalk.blue(budy || m.mtype)}
-│ 👤 Pengirim    : ${chalk.magenta(pushname)} (${chalk.cyan(m.sender)})
-│ 🏠 Grup        : ${chalk.yellow(groupName)} (${chalk.cyan(m.chat)})
-└────────────────────────────────────────┘`);
-                } catch (err) { console.log('Error fetching group metadata:', err); }
-            } else if (m.message && !m.isGroup) {
-                console.log(`
-┌───────── [ PRIVATE CHAT LOG ] ─────────┐
-│ 🕒 Waktu      : ${chalk.green(new Date().toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' }))}
-│ 📝 Pesan      : ${chalk.blue(budy || m.mtype)}
-│ 👤 Pengirim    : ${chalk.magenta(pushname)} (${chalk.cyan(m.sender)})
-└────────────────────────────────────────┘`);
-            }
-
-            // Pass the processed message to the command handler
-            require("./case")(ganggaaa, m, chatUpdate, contacts)
+            
+            require("./case")(ganggaaa, m, chatUpdate, contacts);
         } catch (err) {
-            console.log(err)
+            console.log(err);
         }
-    })
+    });
 
     ganggaaa.decodeJid = (jid) => {
-        if (!jid) return jid
+        if (!jid) return jid;
         if (/:\d+@/gi.test(jid)) {
-            let decode = jidDecode(jid) || {}
-            return decode.user && decode.server && decode.user + '@' + decode.server || jid
-        } else return jid
-    }
-
-    ganggaaa.getName = async(jid, withoutContact = false) => {
-        let id = ganggaaa.decodeJid(jid)
-        withoutContact = ganggaaa.withoutContact || withoutContact
-        let v
-        if (id.endsWith("@g.us")) {
-            try {
-                v = await ganggaaa.groupMetadata(id) || {};
-                return v.subject || PhoneNumber('+' + id.replace('@s.whatsapp.net', '')).getNumber('international');
-            } catch (err) {
-                return PhoneNumber('+' + id.replace('@s.whatsapp.net', '')).getNumber('international');
-            }
-        } else {
-            v = id === '0@s.whatsapp.net' ? { id, name: 'WhatsApp' } : id === ganggaaa.decodeJid(ganggaaa.user.id) ?
-                ganggaaa.user : (contacts[id] || {});
-            return (withoutContact ? '' : v.name) || v.verifiedName || PhoneNumber('+' + jid.replace('@s.whatsapp.net', '')).getNumber('international');
-        }
-    }
-
-    ganggaaa.public = true // Set to true to respond to everyone
+            let decode = jidDecode(jid) || {};
+            return decode.user && decode.server && decode.user + '@' + decode.server || jid;
+        } else return jid;
+    };
+    
+    // Other helper functions...
+    ganggaaa.public = true;
     ganggaaa.serializeM = (m) => smsg(ganggaaa, m, contacts);
 
     ganggaaa.ev.on('connection.update', (update) => {
         const { connection, lastDisconnect, qr } = update;
-
-        // --- NEW: Handle QR code with qr-terminal ---
         if (qr) {
-            console.log(chalk.yellow.bold('\nPindai kode QR di bawah ini dengan aplikasi WhatsApp Anda.\n'));
+            logger.info('QR Code received, please scan with your phone.');
             qrcode.generate(qr, { small: true });
         }
-
         if (connection === 'close') {
             let reason = new Boom(lastDisconnect?.error)?.output.statusCode;
-            if ([DisconnectReason.badSession, DisconnectReason.connectionClosed, DisconnectReason.connectionLost, DisconnectReason.connectionReplaced, DisconnectReason.restartRequired, DisconnectReason.timedOut].includes(reason)) {
-                console.log(chalk.yellow('Koneksi bermasalah, mencoba menyambung kembali...'));
-                Startganggaaa();
-            } else if (reason === DisconnectReason.loggedOut) {
-                console.log(chalk.red('Perangkat Keluar, harap hapus folder "session" dan mulai ulang.'));
-                process.exit();
+            if (reason === DisconnectReason.loggedOut) {
+                logger.error(`Device Logged Out from session ${sessionName}. Please clear the session and scan again.`);
+                fs.rmSync(path.join(__dirname, sessionName), { recursive: true, force: true });
+                delete botInstances[sessionName];
+            } else if ([DisconnectReason.badSession, DisconnectReason.connectionClosed, DisconnectReason.connectionLost, DisconnectReason.connectionReplaced, DisconnectReason.restartRequired, DisconnectReason.timedOut].includes(reason)) {
+                logger.warn(`Connection issue for ${sessionName}, attempting to reconnect...`);
+                startBot(sessionName, false);
             } else {
-                console.error(`Unknown DisconnectReason: ${reason}|${connection}`);
-                Startganggaaa(); // Attempt to reconnect on unknown errors as well
+                logger.error(`Unknown DisconnectReason for ${sessionName}: ${reason}|${connection}`);
+                startBot(sessionName, false);
             }
         } else if (connection === 'open') {
-            console.log(chalk.green.bold('\n[Terhubung] Berhasil terhubung ke WhatsApp! Bot sekarang online.'));
-            console.log(chalk.cyan.italic('ID Pengguna Terhubung: ' + JSON.stringify(ganggaaa.user.id, null, 2)));
+            logger.success(`Successfully connected to WhatsApp! Bot for session ${sessionName} is now online.`);
+            logger.info(`Connected User ID: ${ganggaaa.user.id.split(':')[0]}`);
         }
     });
 
-    ganggaaa.ev.on('creds.update', saveCreds)
-    ganggaaa.sendText = (jid, text, quoted = '', options) => ganggaaa.sendMessage(jid, { text: text, ...options }, { quoted })
+    ganggaaa.ev.on('creds.update', saveCreds);
 
-    ganggaaa.downloadMediaMessage = async(message) => {
-        let mime = (message.msg || message).mimetype || ''
-        let messageType = message.mtype ? message.mtype.replace(/Message/gi, '') : mime.split('/')[0]
-        const stream = await downloadContentFromMessage(message, messageType)
-        let buffer = Buffer.from([])
+    // Add other necessary methods to ganggaaa instance
+    ganggaaa.sendText = (jid, text, quoted = '', options) => ganggaaa.sendMessage(jid, { text: text, ...options }, { quoted });
+    ganggaaa.downloadMediaMessage = async (message) => {
+        let mime = (message.msg || message).mimetype || '';
+        let messageType = message.mtype ? message.mtype.replace(/Message/gi, '') : mime.split('/')[0];
+        const stream = await downloadContentFromMessage(message, messageType);
+        let buffer = Buffer.from([]);
         for await (const chunk of stream) {
-            buffer = Buffer.concat([buffer, chunk])
+            buffer = Buffer.concat([buffer, chunk]);
         }
-        return buffer
-    }
-
-    return ganggaaa
+        return buffer;
+    };
+    
+    return ganggaaa;
 }
 
-Startganggaaa()
+// --- Terminal Command Handler ---
+function setupTerminalCommands() {
+    logger.info("Terminal command handler is active. Type /help for commands.");
+    const rl = readline.createInterface({
+        input: process.stdin,
+        output: process.stdout
+    });
 
+    rl.on('line', async (input) => {
+        const command = input.trim().toLowerCase();
+        const args = command.split(' ');
+        const cmd = args[0];
+
+        switch (cmd) {
+            case '/adduser':
+                const newSessionName = `session_${++sessionCounter}`;
+                logger.info(`Initiating process to add a new user with session name: ${newSessionName}`);
+                await startBot(newSessionName, false);
+                break;
+
+            case '/clearsession':
+                const sessionToClear = args[1];
+                if (!sessionToClear) {
+                    logger.warn("Usage: /clearsession <session_name> (e.g., /clearsession session_main)");
+                    return;
+                }
+                try {
+                    if (botInstances[sessionToClear]) {
+                        await botInstances[sessionToClear].logout();
+                         logger.info(`Logged out from ${sessionToClear}.`);
+                    }
+                    if (fs.existsSync(sessionToClear)) {
+                        fs.rmSync(sessionToClear, { recursive: true, force: true });
+                        logger.success(`Successfully cleared session: ${sessionToClear}`);
+                    } else {
+                        logger.warn(`Session folder not found: ${sessionToClear}`);
+                    }
+                    delete botInstances[sessionToClear];
+                } catch (e) {
+                    logger.error(`Failed to clear session ${sessionToClear}:`, e);
+                }
+                break;
+            
+            case '/list':
+                 logger.info("Currently active bot sessions:");
+                 const activeSessions = Object.keys(botInstances);
+                 if(activeSessions.length > 0) {
+                    activeSessions.forEach(session => {
+                        const bot = botInstances[session];
+                        const user = bot.user ? bot.user.id.split(':')[0] : 'Connecting...';
+                        console.log(chalk.cyan(`  - ${session}: `) + chalk.white(`(${user})`));
+                    });
+                 } else {
+                    logger.warn("No active sessions found.");
+                 }
+                break;
+
+            case '/help':
+                 console.log(chalk.yellow.bold('\n--- AlyaBot Panel Commands ---'));
+                 console.log(chalk.cyan('/adduser') + chalk.white(' - Add a new bot instance via pairing code.'));
+                 console.log(chalk.cyan('/clearsession <session_name>') + chalk.white(' - Deletes a specific session folder.'));
+                 console.log(chalk.cyan('/list') + chalk.white(' - Shows all active bot sessions.'));
+                 console.log(chalk.cyan('/exit') + chalk.white(' - Shuts down the bot script.\n'));
+                break;
+
+            case '/exit':
+                logger.warn("Shutting down all bot instances...");
+                process.exit(0);
+                break;
+
+            default:
+                if (command.startsWith('/')) {
+                   logger.warn("Unknown command. Type /help to see available commands.");
+                }
+                break;
+        }
+    });
+}
+
+
+// --- smsg function (unchanged from original but placed here) ---
 function smsg(ganggaaa, m, contacts) {
     if (!m) return m
     let M = proto.WebMessageInfo
@@ -303,10 +335,21 @@ function smsg(ganggaaa, m, contacts) {
     return m
 }
 
-let file = require.resolve(__filename)
+
+// --- Main Execution ---
+function main() {
+    logger.startupBanner();
+    setupTerminalCommands();
+    startBot('session_main', true); // Start the first bot
+}
+
+main();
+
+// File watcher (optional but good for development)
+let file = require.resolve(__filename);
 fs.watchFile(file, () => {
-    fs.unwatchFile(file)
-    console.log(chalk.yellow(`Update detected in ${__filename}`))
-    delete require.cache[file]
-    require(file)
-})
+    fs.unwatchFile(file);
+    logger.warn(`Update detected in ${__filename}, restarting...`);
+    delete require.cache[file];
+    require(file);
+});
