@@ -15,12 +15,12 @@ const success = (message, ...args) => {
 
 const startupBanner = () => {
     const banner = `
-${chalk.blue.bold('                  d8888b. d888888b d8b   db  .d88b.  ')}
-${chalk.blue.bold('                  88  `8D   `88\'   888o  88 .8P  Y8. ')}
-${chalk.blue.bold('                  88oobY\'    88    88V8o 88 88    88 ')}
-${chalk.blue.bold('                  88`8b      88    88 V8o88 88    88 ')}
-${chalk.blue.bold('                  88 `88.   .88.   88  V888 `8b  d8\' ')}
-${chalk.blue.bold('                  88   YD Y888888P VP   V8P  `Y88P\'  ')}
+${chalk.blue.bold(' █████╗░░█████╗░███╗░░██╗ █████╗░ █████╗░░█████╗░')}
+${chalk.blue.bold('██╔═══╝░██╔══██╗████╗░██║██╔═══╝░██╔═══╝░██╔══██╗')}
+${chalk.blue.bold('██║ ███╗███████║██╔██╗██║██║ ███╗██║ ███╗███████║')}
+${chalk.blue.bold('██║ ╚═████╔═══████║╚████║██║ ╚═████║ ╚═████╔═══██')}
+${chalk.blue.bold('╚█████╔╝██║░░░████║░╚███║╚█████╔╝╚█████╔╝██║░░░██')}
+${chalk.blue.bold('░╚════╝░╚═╝░░░╚═╚═╝░░╚══╝░╚════╝░░╚════╝░╚═╝░░░╚═\')}
 
 ${chalk.green.bold('     Welcome to AlyaBot - Created with <3 by G4NGGAAA')}
 ${chalk.cyan('--------------------------------------------------------------')}
