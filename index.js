@@ -1,8 +1,6 @@
 /*
     Base by https://github.com/G4NGGAAA
     Credits: G4NGGAAA
-    MODIFIED: Menggunakan config.js, namun data penting tetap disamarkan di sini.
-    STATUS: Anti-Spam, Anti-Duplicate, Pairing Code Stabil, Notifikasi Owner.
 */
 
 import './config.js'; // WAJIB: Memuat variabel global dari config.js terlebih dahulu
