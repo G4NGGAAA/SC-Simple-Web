@@ -5,12 +5,17 @@
    ASAL JANGAN HAPUS CREDIT YAA 🎩🎩
 */
 
-// --- JANGAN DIHAPUS
+//Owner Settings
 global.owner = ["6285855962331"]; // Ganti dengan nomor Owner
 global.namabot = "AlyaBot";
 global.namaown = "G4NGGAAA";
 global.packname = "Sticker by";
 global.author = "AlyaBot";
+
+//Bot Settings
+global.botNumber = '08xxxxxxxxxx'; // <-- Ganti dengan nomor Anda
+global.botName = 'Alya-Bot MD';
+global.customPairingCode = 'G4NGGAAA';
 
 // --- PENGATURAN API & TOKEN
 // Masukkan API Key Gemini Anda di sini
