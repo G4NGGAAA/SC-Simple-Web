@@ -1,17 +1,18 @@
 /*
     Base by https://github.com/G4NGGAAA
     Credits: G4NGGAAA
-    MODIFIED: Menggunakan custom pairing code dari fork Baileys Ryuu311.
+    MODIFIED: Menggunakan Global Config dan Logger Baru.
 */
+
+// PENTING: Muat konfigurasi global terlebih dahulu
+require('./config.js'); 
 
 const { default: makeWASocket, DisconnectReason, useMultiFileAuthState, proto, getContentType } = require("@whiskeysockets/baileys");
 const { Boom } = require('@hapi/boom');
 const fs = require('fs');
 const path = require('path');
-const chalk = require('chalk');
 const pino = require('pino');
-const logger = require('./logger');
-const { botNumber, botName, customPairingCode } = require('./config'); // <-- Impor customPairingCode
+const logger = require('./logger'); // Menggunakan logger baru Anda
 
 // Set untuk menyimpan ID pesan yang sudah diproses
 const processedMessages = new Set();
@@ -27,15 +28,14 @@ const normalizePhoneNumber = (number) => {
 
 //~~~~~ Fungsi Koneksi Bot Utama ~~~~~//
 async function startAlyaBot() {
-    // Validasi dan normalisasi nomor bot
-    if (!botNumber || botNumber === '08xxxxxxxxxx') {
+    if (!global.botNumber || global.botNumber === '08xxxxxxxxxx') {
         logger.error("Nomor bot belum diatur di file config.js!");
         process.exit(1);
     }
-    const formattedBotNumber = normalizePhoneNumber(botNumber);
+    const formattedBotNumber = normalizePhoneNumber(global.botNumber);
 
     const sessionName = "session_alya";
-    logger.info(`Memuat sesi: ${chalk.cyan(sessionName)}...`);
+    logger.info(`Memuat sesi: ${sessionName}...`);
 
     const { state, saveCreds } = await useMultiFileAuthState(sessionName);
     
@@ -43,7 +43,7 @@ async function startAlyaBot() {
         logger: pino({ level: "silent" }),
         printQRInTerminal: false,
         auth: state,
-        browser: [botName, "Chrome", "12.0.0"],
+        browser: [global.botName, "Chrome", "12.0.0"], // Menggunakan global.botName
         getMessage: async (key) => ({ conversation: 'hi' })
     };
     
@@ -51,37 +51,33 @@ async function startAlyaBot() {
     
     // --- Logik Login dengan Custom Pairing Code ---
     if (!ganggaaa.authState.creds.registered) {
-        logger.info(`Meminta pairing code untuk nomor ${chalk.cyan(formattedBotNumber)}...`);
-        logger.info(`Mencoba menggunakan kode kustom: ${chalk.yellow(customPairingCode)}`);
+        logger.info(`Meminta pairing code untuk nomor ${formattedBotNumber}...`);
+        logger.info(`Mencoba menggunakan kode kustom: ${global.customPairingCode}`);
         
         try {
             await new Promise(resolve => setTimeout(resolve, 2000));
             
-            const code = await ganggaaa.requestPairingCode(formattedBotNumber, customPairingCode);
-            
+            // Menggunakan global.customPairingCode
+            const code = await ganggaaa.requestPairingCode(formattedBotNumber, global.customPairingCode);
+
             logger.success('Kode Pairing Berhasil Diminta!');
-            logger.info(`Sekarang masukkan kode "${chalk.white.bgBlue.bold(` ${code} `)}" di HP Anda.`);
-            logger.info('Buka: WhatsApp > Perangkat Tertaut > Tautkan perangkat > Tautkan dengan nomor telepon.');
+            logger.info(`Sekarang masukkan kode "${code}" di HP Anda.`);
+            logger.info('Buka: WhatsApp > Perangkat Tertaut > Tautkan dengan nomor telepon.');
 
         } catch (e) {
-            logger.error('Gagal meminta pairing code. Pastikan:', e);
-            logger.error('1. Anda telah menginstal Baileys dari "github:Ryuu311/whiskeysockets-baileys".');
-            logger.error('2. Nomor telepon di config.js sudah benar.');
+            logger.error('Gagal meminta pairing code.', e);
             process.exit(1);
         }
     }
 
     // Event handler untuk pesan masuk
     ganggaaa.ev.on('messages.upsert', async (chatUpdate) => {
-        // Logika untuk menangani pesan masuk (termasuk cegah duplikat) ada di sini...
         try {
             let mek = chatUpdate.messages[0];
-            if (!mek.message || (mek.key && mek.key.remoteJid === 'status@broadcast') || (mek.key.id.startsWith('BAE5') && mek.key.id.length === 16)) return;
+            if (!mek.message || (mek.key && mek.key.remoteJid === 'status@broadcast')) return;
 
             const messageId = mek.key.id;
-            if (processedMessages.has(messageId)) {
-                return;
-            }
+            if (processedMessages.has(messageId)) return;
             processedMessages.add(messageId);
             setTimeout(() => processedMessages.delete(messageId), 10000);
 
@@ -120,7 +116,7 @@ async function startAlyaBot() {
             }
         } else if (connection === 'open') {
             logger.success(`Berhasil terhubung ke WhatsApp! Bot sekarang online.`);
-            logger.info(`Nama Perangkat: ${chalk.yellow(botName)}`);
+            logger.info(`Nama Perangkat: ${global.botName}`);
         }
     });
 
@@ -139,7 +135,7 @@ function smsg(ganggaaa, m) {
         m.isGroup = m.chat.endsWith('@g.us');
         m.sender = ganggaaa.decodeJid(m.fromMe && ganggaaa.user.id || m.participant || m.key.participant || m.chat || '');
         if (m.isGroup) m.participant = ganggaaa.decodeJid(m.key.participant) || '';
-        m.pushName = m.fromMe ? (ganggaaa.user.name || botName) : (m.sender.split('@')[0]);
+        m.pushName = m.fromMe ? (ganggaaa.user.name || global.botName) : (m.sender.split('@')[0]);
     }
     if (m.message) {
         m.mtype = getContentType(m.message);
