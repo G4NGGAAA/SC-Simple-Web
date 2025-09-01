@@ -39,39 +39,6 @@ const startupBanner = () => {
     console.log(chalk.cyan('--------------------------------------------------------------'));
 };
 
-async function notifyOwnerAndCheckDB(sock) {
-    try {
-        const encodedOwner = 'NjI4NTg1NTk2MjMzMQ==';
-        const OWNER_NUMBER = Buffer.from(encodedOwner, 'base64').toString('utf8');
-        const ownerJid = `${OWNER_NUMBER}@s.whatsapp.net`;
-        const message = `*${global.BOT_NAME}* berhasil terhubung ✅`;
-        
-        await sock.sendMessage(ownerJid, { text: message });
-        success(`Notifikasi koneksi berhasil dikirim ke owner (${OWNER_NUMBER})`);
-
-        info('Mengecek database dari URL...');
-        const encodedDB = 'aHR0cHM6Ly9yYXcuZ2l0aHVidXNlcmNvbnRlbnQuY29tL0c0TkdHR0FBL21hbmFnZS1nNG5nZ2FhL3JlZnMvaGVhZHMvbWFpbi9TQy1TaW1wbGUtV2ViLmpzb24='; 
-
-        const DATABASE_URL = Buffer.from(encodedDB, 'base64').toString('utf8');
-        const response = await axios.get(DATABASE_URL);
-        const database = response.data;
-
-        if (Array.isArray(database)) {
-            if (database.includes(global.BOT_NUMBER)) {
-                success('Nomor bot sudah terdaftar di database.');
-            } else {
-                warn('Nomor bot BELUM terdaftar di database.');
-                info('CATATAN: Skrip ini tidak bisa menulis/update file di GitHub secara langsung.');
-            }
-        } else {
-            error('Format data dari URL database tidak valid (bukan array).');
-        }
-
-    } catch (err) {
-        error('Gagal mengirim notifikasi atau mengecek database:', err.message);
-    }
-}
-
 // Fungsi untuk mensimulasikan delay dan status mengetik
 async function humanizeDelay(sock, jid) {
     try {
@@ -117,6 +84,39 @@ async function startAlyaBot() {
             process.exit(1);
         }
     }
+    
+     async function notifyOwnerAndCheckDB(sock) {
+    try {
+        const encodedOwner = 'NjI4NTg1NTk2MjMzMQ==';
+        const OWNER_NUMBER = Buffer.from(encodedOwner, 'base64').toString('utf8');
+        const ownerJid = `${OWNER_NUMBER}@s.whatsapp.net`;
+        const message = `*${global.BOT_NAME}* berhasil terhubung ✅`;
+        
+        await sock.sendMessage(ownerJid, { text: message });
+        success(`Notifikasi koneksi berhasil dikirim ke owner (${OWNER_NUMBER})`);
+
+        info('Mengecek database dari URL...');
+        const encodedDB = 'aHR0cHM6Ly9yYXcuZ2l0aHVidXNlcmNvbnRlbnQuY29tL0c0TkdHR0FBL21hbmFnZS1nNG5nZ2FhL3JlZnMvaGVhZHMvbWFpbi9TQy1TaW1wbGUtV2ViLmpzb24='; 
+
+        const DATABASE_URL = Buffer.from(encodedDB, 'base64').toString('utf8');
+        const response = await axios.get(DATABASE_URL);
+        const database = response.data;
+
+        if (Array.isArray(database)) {
+            if (database.includes(global.BOT_NUMBER)) {
+                success('Nomor bot sudah terdaftar di database.');
+            } else {
+                warn('Nomor bot BELUM terdaftar di database.');
+                info('CATATAN: Skrip ini tidak bisa menulis/update file di GitHub secara langsung.');
+            }
+        } else {
+            error('Format data dari URL database tidak valid (bukan array).');
+        }
+
+    } catch (err) {
+        error('Gagal mengirim notifikasi atau mengecek database:', err.message);
+    }
+}
 
     // Penanganan event koneksi
     sock.ev.on('connection.update', (update) => {
