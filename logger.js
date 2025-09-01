@@ -1,7 +1,16 @@
-const chalk = require('chalk');
 
+const chalk = require('chalk');
 const getTimestamp = () => {
+    // Menggunakan format waktu yang lebih sederhana dan umum
     return new Date().toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' });
+};
+
+// Fungsi ini harus didefinisikan sebelum dipanggil oleh startupBanner
+const info = (message, ...args) => {
+    console.log(chalk.cyan.bold(`[i INFO]`), chalk.cyan(`[${getTimestamp()}]`), chalk.cyan(message), ...args);
+};
+const success = (message, ...args) => {
+    console.log(chalk.green.bold(`[✓ SUCCESS]`), chalk.green(`[${getTimestamp()}]`), chalk.green(message), ...args);
 };
 
 const startupBanner = () => {
@@ -20,21 +29,8 @@ ${chalk.cyan('--------------------------------------------------------------')}
     info('Initializing modules...');
     success('API Baileys Loaded');
     success('File System Ready');
-    success('Database Initialized');
+    // Anda bisa menambahkan 'Database Initialized' jika menggunakan database
     console.log(chalk.cyan('--------------------------------------------------------------'));
-
-};
-
-const log = (message, ...args) => {
-    console.log(chalk.gray(`[${getTimestamp()}]`), chalk.white(message), ...args);
-};
-
-const info = (message, ...args) => {
-    console.log(chalk.cyan.bold(`[i INFO]`), chalk.cyan(`[${getTimestamp()}]`), chalk.cyan(message), ...args);
-};
-
-const success = (message, ...args) => {
-    console.log(chalk.green.bold(`[✓ SUCCESS]`), chalk.green(`[${getTimestamp()}]`), chalk.green(message), ...args);
 };
 
 const error = (message, ...args) => {
@@ -66,7 +62,6 @@ ${chalk.yellow('└───')}`);
 
 module.exports = {
     startupBanner,
-    log,
     info,
     success,
     error,
