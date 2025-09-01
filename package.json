@@ -9,7 +9,7 @@
   "author": "G4NGGAAA",
   "dependencies": {
     "@hapi/boom": "latest",
-    "@whiskeysockets/baileys": "latest",
+    "@whiskeysockets/baileys": "github:G4NGGAAA/Baileys",
     "awesome-phonenumber": "latest",
     "axios": "latest",
     "chalk": "^4.1.2",
