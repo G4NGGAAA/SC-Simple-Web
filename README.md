@@ -5,8 +5,9 @@
 
 ### Kelebihan AlyaBot by G4NGGAAA
 - ✔️ | **Simple** 
-- ✔️ | **Suppport Termux** 
-- ✔️ | **Pairing & QR** 
+- ✔️ | **Suppport Termux**
+- ✔️ | **Pairing**
+- ✔️ | **Custom Code Pairinv**
 - ✔️ | **Chat AI NO PREFIX** 
 - ✔️ | **Fitur Web**
 ---------
@@ -38,6 +39,7 @@ npm start
 ```bash
 - G4NGGAAA Pembuat Script
 - GEMINI FIX ERROR & MODIFIKASI
+- Eriza Penyedia Fitur
 - Ahmadxyz Penyedia Fitur
-- Yupra Penyedia Baileys
+- Ryuu311 Penyedia Baileys
 ```
