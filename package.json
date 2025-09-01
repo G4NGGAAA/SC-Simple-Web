@@ -12,7 +12,7 @@
     "@whiskeysockets/baileys": "latest",
     "awesome-phonenumber": "latest",
     "axios": "latest",
-    "chalk": "^5.6.0",
+    "chalk": "^4.1.2",
     "form-data": "latest",
     "node-fetch": "^2.7.0",
     "pino": "latest",
